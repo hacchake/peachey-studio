@@ -21,6 +21,8 @@ pub struct Studio {
     pub recorder: crate::recorder::Recorder,
     pub scripts: crate::scripts::Scripts,
     mcp: Option<peel_mcp::Bridge>,
+    /// イベントループを起こす手段。MCP の要求が届いたら鳴らす。
+    waker: Option<peel_ui::Waker>,
     pub(crate) recovered: Vec<peel_project::AutosaveEntry>,
     /// A project change waiting on the save prompt.
     pub pending: Option<crate::project::Change>,
@@ -91,6 +93,7 @@ impl Studio {
             recorder: Default::default(),
             scripts: Default::default(),
             mcp: None,
+            waker: None,
             recovered,
             pending: None,
             templates: crate::user_templates::Library::open(crate::user_templates::library_dir()),
@@ -116,10 +119,39 @@ impl Studio {
             Ok(bridge) => {
                 self.mcp = Some(bridge);
                 self.welcome = false;
+                self.connect_waker();
             }
             Err(error) => self
                 .session
                 .notify(format!("Could not start MCP: {error}"), true),
+        }
+    }
+
+    /// MCP の要求が届いたらイベントループを起こすようにする。待機中や
+    /// 最小化中は描画フレームが来ないので、これがないと要求が溜まったまま
+    /// 処理されない。ブリッジと起こし役のどちらが先に揃っても繋がる。
+    fn connect_waker(&mut self) {
+        if let (Some(bridge), Some(waker)) = (&self.mcp, &self.waker) {
+            let waker = waker.clone();
+            bridge.set_waker(move || waker.wake());
+        }
+    }
+
+    /// 届いている MCP の要求を処理し、その結果に UI の状態を合わせる。
+    fn pump_mcp(&mut self) {
+        let Some(bridge) = &mut self.mcp else { return };
+        let project = self.session.project().id;
+        let recording = self.session.is_recording();
+        let live_target = self.session.live_target();
+        bridge.pump(&mut self.session);
+        if recording != self.session.is_recording() {
+            self.recorder.armed = self.session.is_recording();
+        }
+        if live_target != self.session.live_target() {
+            self.ws.selected_channel = self.session.live_target();
+        }
+        if project != self.session.project().id {
+            self.reset_workspace();
         }
     }
 
@@ -1211,6 +1243,18 @@ impl App for Studio {
         Some(crate::menus::bar(self, cfg!(target_os = "macos")))
     }
 
+    fn set_waker(&mut self, waker: peel_ui::Waker) {
+        self.waker = Some(waker);
+        self.connect_waker();
+    }
+
+    fn wake(&mut self) {
+        // 最小化中でも要求に答える。続くフレームが来れば同じ処理がもう一度
+        // 走るが、空のキューを覗くだけで済む。
+        self.pump_mcp();
+        self.session.tick();
+    }
+
     fn shutdown(&mut self) {
         self.recorder.finish_capture(&mut self.session);
         self.session.panic();
@@ -1262,21 +1306,7 @@ impl Studio {
                 }
             }
         }
-        if let Some(bridge) = &mut self.mcp {
-            let project = self.session.project().id;
-            let recording = self.session.is_recording();
-            let live_target = self.session.live_target();
-            bridge.pump(&mut self.session);
-            if recording != self.session.is_recording() {
-                self.recorder.armed = self.session.is_recording();
-            }
-            if live_target != self.session.live_target() {
-                self.ws.selected_channel = self.session.live_target();
-            }
-            if project != self.session.project().id {
-                self.reset_workspace();
-            }
-        }
+        self.pump_mcp();
         self.session.tick();
         // Input meter: peak hold with a fall of about 20 dB a second.
         let (l, r) = self.session.input_level();

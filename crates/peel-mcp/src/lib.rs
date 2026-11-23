@@ -12,8 +12,8 @@ mod io_control;
 pub use actions::{Action, decode};
 pub use control::Control;
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 
 use peel_session::Session;
 use rmcp::model::*;
@@ -28,6 +28,21 @@ struct Request {
     context: RequestContext<RoleServer>,
 }
 
+/// 要求が届いたことを持ち主のスレッドに知らせる関数。
+type WakeFn = Box<dyn Fn() + Send + Sync>;
+
+/// プロトコル側と [`Bridge`] で共有する、後から一度だけ設定できる起こし役。
+#[derive(Clone, Default)]
+struct WakeSlot(Arc<OnceLock<WakeFn>>);
+
+impl WakeSlot {
+    fn wake(&self) {
+        if let Some(wake) = self.0.get() {
+            wake();
+        }
+    }
+}
+
 /// The UI owns this value and pumps it once per frame. Session and plugin
 /// objects never cross to the protocol thread or the realtime audio thread.
 pub struct Bridge {
@@ -35,6 +50,7 @@ pub struct Bridge {
     control: Control,
     finished: Arc<AtomicBool>,
     disconnected: bool,
+    waker: WakeSlot,
 }
 
 impl Bridge {
@@ -42,19 +58,25 @@ impl Bridge {
         let (tx, rx) = mpsc::channel(32);
         let finished = Arc::new(AtomicBool::new(false));
         let done = finished.clone();
+        let waker = WakeSlot::default();
+        let server_waker = waker.clone();
         std::thread::Builder::new()
             .name("peel-mcp".into())
             .spawn(move || {
+                let closed = server_waker.clone();
                 let result = (|| -> Result<(), String> {
                     let runtime = tokio::runtime::Builder::new_current_thread()
                         .enable_all()
                         .build()
                         .map_err(|e| e.to_string())?;
                     runtime.block_on(async {
-                        let service = Server { tx }
-                            .serve(rmcp::transport::stdio())
-                            .await
-                            .map_err(|e| e.to_string())?;
+                        let service = Server {
+                            tx,
+                            waker: server_waker,
+                        }
+                        .serve(rmcp::transport::stdio())
+                        .await
+                        .map_err(|e| e.to_string())?;
                         service.waiting().await.map_err(|e| e.to_string())?;
                         Ok(())
                     })
@@ -63,6 +85,8 @@ impl Bridge {
                     eprintln!("Peel MCP: {error}");
                 }
                 done.store(true, Ordering::Release);
+                // 切断の後始末（再生停止など）も、操作を待たずに済ませる。
+                closed.wake();
             })
             .map_err(|e| e.to_string())?;
         Ok(Self {
@@ -70,7 +94,15 @@ impl Bridge {
             control: Control::default(),
             finished,
             disconnected: false,
+            waker,
         })
+    }
+
+    /// 要求が届くたび（と切断時）に呼ぶ関数を登録する。描画フレームが
+    /// 来ないと [`Bridge::pump`] が呼ばれないデスクトップ版で、イベント
+    /// ループを起こすために使う。二度目以降の登録は無視される。
+    pub fn set_waker(&self, wake: impl Fn() + Send + Sync + 'static) {
+        let _ = self.waker.0.set(Box::new(wake));
     }
 
     /// Drain a bounded number of calls so a busy agent cannot starve UI frames.
@@ -106,6 +138,7 @@ impl Bridge {
 
 struct Server {
     tx: mpsc::Sender<Request>,
+    waker: WakeSlot,
 }
 
 impl ServerHandler for Server {
@@ -152,6 +185,7 @@ impl ServerHandler for Server {
             })
             .await
             .map_err(|_| ErrorData::internal_error("The Peel session has closed", None))?;
+        self.waker.wake();
         let result = receive
             .await
             .map_err(|_| ErrorData::internal_error("The Peel session has closed", None))?;

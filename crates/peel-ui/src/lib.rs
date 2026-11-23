@@ -28,7 +28,7 @@ pub mod widgets;
 mod tests;
 
 pub use a11y::{Action, ActionRequest, Role, Semantics};
-pub use app::{App, WindowControl, WindowOptions, run};
+pub use app::{App, Waker, WindowControl, WindowOptions, run};
 pub use chrome::Edge;
 pub use focus::{Adjust, FocusKind};
 pub use geom::{Color, Rect, Vec2, rect, vec2};

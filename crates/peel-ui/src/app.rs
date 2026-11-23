@@ -57,6 +57,25 @@ pub trait App {
     fn menu_bar(&mut self) -> Option<MenuBar> {
         None
     }
+    /// 他のスレッドから [`App::wake`] を呼ぶための [`Waker`] を受け取る。
+    /// アプリを作った直後に一度だけ呼ばれる。
+    fn set_waker(&mut self, _waker: Waker) {}
+    /// [`Waker`] が鳴ったときに、それが要求するフレームより先に呼ばれる。
+    /// [`App::update`] と違い、ウィンドウが最小化・非表示でフレームが
+    /// 描かれない間も呼ばれるので、他スレッドから積まれた仕事は
+    /// `update` だけでなくここでも処理する。
+    fn wake(&mut self) {}
+}
+
+/// イベントループに [`App::wake`] の呼び出しと再描画を頼む。複製は安く、
+/// どのスレッドからでも使える。ウィンドウが閉じた後は何もしない。
+#[derive(Clone)]
+pub struct Waker(EventLoopProxy<UserEvent>);
+
+impl Waker {
+    pub fn wake(&self) {
+        let _ = self.0.send_event(UserEvent::Wake);
+    }
 }
 
 /// Window operations available to the app during a frame.
@@ -176,6 +195,8 @@ enum UserEvent {
     /// A native menu item's command id.
     #[cfg_attr(not(any(target_os = "macos", target_os = "windows")), allow(dead_code))]
     Menu(u32),
+    /// [`Waker`] が鳴った。
+    Wake,
 }
 
 impl From<u32> for UserEvent {
@@ -309,6 +330,7 @@ impl<A: App, F: FnOnce(&mut Ui) -> A> ApplicationHandler<UserEvent> for Runner<A
         let make = self.make.take().expect("app factory");
         #[allow(unused_mut)]
         let mut app = make(&mut self.ui);
+        app.set_waker(Waker(self.proxy.clone()));
         #[cfg(any(target_os = "macos", target_os = "windows"))]
         let menu = if self.options.native_menus
             && let Some(bar) = app.menu_bar()
@@ -350,6 +372,15 @@ impl<A: App, F: FnOnce(&mut Ui) -> A> ApplicationHandler<UserEvent> for Runner<A
             UserEvent::Menu(id) => {
                 self.ui.queue_menu_command(id);
                 if let Some(run) = &self.running {
+                    run.window.request_redraw();
+                }
+                return;
+            }
+            UserEvent::Wake => {
+                // Windows は最小化中のウィンドウに描画メッセージを送らない。
+                // ここで頼む再描画を待たず、先に仕事を済ませる。
+                if let Some(run) = &mut self.running {
+                    run.app.wake();
                     run.window.request_redraw();
                 }
                 return;
@@ -422,6 +453,14 @@ impl<A: App, F: FnOnce(&mut Ui) -> A> Runner<A, F> {
         let Some(run) = &mut self.running else { return };
         let scale = run.window.scale_factor() as f32;
         let size = run.window.inner_size();
+        // 最小化すると Windows は大きさを 0 にする。その大きさで画面を組むと
+        // 文字の行の高さが 0 になり、cosmic-text の検査で落ちる。見えない
+        // 間は描かず、元に戻したときの Resized で再描画する。MCP などの
+        // 仕事は App::wake が受け持つ。
+        if size.width == 0 || size.height == 0 || run.window.is_minimized() == Some(true) {
+            event_loop.set_control_flow(ControlFlow::Wait);
+            return;
+        }
         let screen = Rect {
             x: 0.0,
             y: 0.0,

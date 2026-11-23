@@ -249,7 +249,14 @@ impl Renderer {
             wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
                 return false;
             }
-            wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Suboptimal(_) => {
+            wgpu::CurrentSurfaceTexture::Outdated => {
+                self.surface.configure(&self.device, &self.config);
+                return false;
+            }
+            wgpu::CurrentSurfaceTexture::Suboptimal(frame) => {
+                // 受け取ったテクスチャを持ったまま configure すると wgpu の
+                // 検査で落ちる（最小化から戻したときに起きる）。先に手放す。
+                drop(frame);
                 self.surface.configure(&self.device, &self.config);
                 return false;
             }
