@@ -679,8 +679,7 @@ fn time(ui: &mut Ui, r: Rect, studio: &mut Studio, fit: Fit) {
 }
 
 fn logo(ui: &mut Ui, r: Rect) {
-    let ground = ui.theme.panel;
-    crate::util::logo(ui, r.center(), 12.0, ground);
+    crate::util::logo(ui, r.center(), 12.0);
 }
 
 fn horizontal_meter(ui: &mut Ui, id: W, r: Rect, peaks: (f32, f32)) {

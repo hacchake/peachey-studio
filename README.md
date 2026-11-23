@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icons/peel-256.png" width="96" alt="">
+  <img src="assets/icons/peachey-256.png" width="96" alt="">
 </p>
 
 <h1 align="center">Peachey Studio</h1>

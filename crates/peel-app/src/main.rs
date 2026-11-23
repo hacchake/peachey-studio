@@ -105,6 +105,8 @@ fn main() {
     }
     let options = WindowOptions {
         title: "Peachey Studio".into(),
+        // タスクバーやウィンドウの左上に出る桃のアイコン。
+        icon_png: Some(include_bytes!("../../../assets/icons/peachey-256.png")),
         // A Windows native menu takes F10 and Alt from the editors.
         native_menus: cfg!(target_os = "macos"),
         ..Default::default()

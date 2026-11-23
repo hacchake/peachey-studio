@@ -59,7 +59,7 @@ jobs:
           mkdir -p dist/peachey-studio/share/applications dist/peachey-studio/share/icons/hicolor/256x256/apps dist/peachey-studio/bin
           cp target/release/peachey-studio target/release/peel target/release/peel-clap-scan dist/peachey-studio/bin/
           cp packaging/linux/peachey-studio.desktop dist/peachey-studio/share/applications/
-          cp assets/icons/peel-256.png dist/peachey-studio/share/icons/hicolor/256x256/apps/peachey-studio.png
+          cp assets/icons/peachey-256.png dist/peachey-studio/share/icons/hicolor/256x256/apps/peachey-studio.png
           uv run --no-project --python 3.12.13 scripts/bundle-python.py dist/peachey-studio/lib/peel/python
           cp LICENSE README.md assets/LICENSES.md docs/SCRIPTING.md dist/peachey-studio/
           mkdir -p dist/peachey-studio/sound-licenses

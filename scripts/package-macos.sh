@@ -30,19 +30,19 @@ mkdir -p "$APP/Contents/Resources/sound-licenses/palm-muted"
 cp assets/strings/palm-muted/{LICENSE.txt,NOTICE.txt,README.md,manifest.json} "$APP/Contents/Resources/sound-licenses/palm-muted/"
 
 # Icon set from the generated PNGs.
-cp assets/icons/peel-16.png dist/iconset/icon_16x16.png
-cp assets/icons/peel-32.png dist/iconset/icon_16x16@2x.png
-cp assets/icons/peel-32.png dist/iconset/icon_32x32.png
-cp assets/icons/peel-64.png dist/iconset/icon_32x32@2x.png
-cp assets/icons/peel-128.png dist/iconset/icon_128x128.png
-cp assets/icons/peel-256.png dist/iconset/icon_128x128@2x.png
-cp assets/icons/peel-256.png dist/iconset/icon_256x256.png
-cp assets/icons/peel-512.png dist/iconset/icon_256x256@2x.png
-cp assets/icons/peel-512.png dist/iconset/icon_512x512.png
-cp assets/icons/peel-1024.png dist/iconset/icon_512x512@2x.png
-mv dist/iconset dist/Peel.iconset
-iconutil -c icns dist/Peel.iconset -o "$APP/Contents/Resources/Peel.icns"
-rm -rf dist/Peel.iconset
+cp assets/icons/peachey-16.png dist/iconset/icon_16x16.png
+cp assets/icons/peachey-32.png dist/iconset/icon_16x16@2x.png
+cp assets/icons/peachey-32.png dist/iconset/icon_32x32.png
+cp assets/icons/peachey-64.png dist/iconset/icon_32x32@2x.png
+cp assets/icons/peachey-128.png dist/iconset/icon_128x128.png
+cp assets/icons/peachey-256.png dist/iconset/icon_128x128@2x.png
+cp assets/icons/peachey-256.png dist/iconset/icon_256x256.png
+cp assets/icons/peachey-512.png dist/iconset/icon_256x256@2x.png
+cp assets/icons/peachey-512.png dist/iconset/icon_512x512.png
+cp assets/icons/peachey-1024.png dist/iconset/icon_512x512@2x.png
+mv dist/iconset dist/Peachey.iconset
+iconutil -c icns dist/Peachey.iconset -o "$APP/Contents/Resources/Peachey.icns"
+rm -rf dist/Peachey.iconset
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -55,7 +55,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleVersion</key><string>${VERSION}</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
   <key>CFBundleExecutable</key><string>peachey-studio</string>
-  <key>CFBundleIconFile</key><string>Peel</string>
+  <key>CFBundleIconFile</key><string>Peachey</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.music</string>
@@ -66,7 +66,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <dict>
       <key>CFBundleTypeName</key><string>Peachey Studio Project</string>
       <key>CFBundleTypeRole</key><string>Editor</string>
-      <key>CFBundleTypeIconFile</key><string>Peel</string>
+      <key>CFBundleTypeIconFile</key><string>Peachey</string>
       <key>LSHandlerRank</key><string>Owner</string>
       <key>CFBundleTypeExtensions</key><array><string>peelproj</string></array>
     </dict>

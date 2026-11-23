@@ -232,26 +232,37 @@ mod audio_tests {
     }
 }
 
-/// The mark: a cut orange with a curl of peel lifting away. `radius` is
-/// the fruit's; `ground` is the color behind it, which cuts the gap
-/// between fruit and peel.
-pub fn logo(ui: &mut Ui, c: Vec2, radius: f32, ground: Color) {
-    let t = ui.theme.clone();
+/// The mark: a peach with its stem and two leaves, matching the app icon.
+/// `radius` is roughly the fruit's.
+pub fn logo(ui: &mut Ui, c: Vec2, radius: f32) {
     let k = radius / 12.0;
-    ui.scene.circle(c, radius, t.accent);
-    ui.scene.circle(c, 9.2 * k, t.accent.darken(0.18));
-    for i in 0..4 {
-        let a = i as f32 * std::f32::consts::FRAC_PI_4;
-        let d = vec2(a.sin(), -a.cos()) * (8.6 * k);
-        ui.scene.line(c - d, c + d, 1.2 * k, t.accent);
-    }
-    ui.scene.arc(c, radius, 2.8 * k, 0.35, 1.25, ground);
-    ui.scene.arc(
-        c + vec2(9.4, -8.8) * k,
-        3.8 * k,
-        2.0 * k,
-        3.5,
-        2.5,
-        t.accent.lighten(0.15),
-    );
+    let p = |x: f32, y: f32| c + vec2(x, y) * k;
+    // 果肉: 左右のふくらみを少しずらした二つの円と、下側の黄色み。
+    ui.scene.circle(p(-1.2, 1.2), 9.6 * k, Color::hex(0xF68A86));
+    ui.scene.circle(p(1.4, 0.8), 10.2 * k, Color::hex(0xF0607A));
+    ui.scene
+        .circle(p(0.4, 3.8), 7.2 * k, Color::hex(0xF8A65E).alpha(0.3));
+    ui.scene
+        .circle(p(0.6, 5.2), 5.0 * k, Color::hex(0xF9B868).alpha(0.4));
+    ui.scene
+        .circle(p(3.6, -3.4), 1.8 * k, Color::hex(0xFFFFFF).alpha(0.3));
+    // 真ん中の割れ目。
+    let cleft: Vec<Vec2> = (0..=8)
+        .map(|i| {
+            let t = i as f32 / 8.0;
+            let (a, m, b) = ((-0.6, -8.6), (-5.6, -0.6), (-3.0, 9.4));
+            let x = (1.0 - t) * (1.0 - t) * a.0 + 2.0 * (1.0 - t) * t * m.0 + t * t * b.0;
+            let y = (1.0 - t) * (1.0 - t) * a.1 + 2.0 * (1.0 - t) * t * m.1 + t * t * b.1;
+            p(x, y)
+        })
+        .collect();
+    ui.scene
+        .polyline(&cleft, 1.1 * k, Color::hex(0xC8455E).alpha(0.7));
+    // 軸と葉。
+    ui.scene
+        .line(p(0.2, -8.8), p(2.0, -12.6), 1.5 * k, Color::hex(0x7A4A28));
+    ui.scene
+        .line(p(-1.0, -9.6), p(-7.0, -12.0), 3.2 * k, Color::hex(0x2F7F33));
+    ui.scene
+        .line(p(2.6, -10.2), p(9.6, -11.2), 3.6 * k, Color::hex(0x43A047));
 }

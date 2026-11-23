@@ -285,6 +285,13 @@ impl<A: App, F: FnOnce(&mut Ui) -> A> ApplicationHandler<UserEvent> for Runner<A
                 self.options.min_size.1,
             ));
         if let Some(icon) = self.options.icon_png.and_then(decode_icon) {
+            // Windows では小さいアイコンとは別に、タスクバーや Alt+Tab に
+            // 出る大きいアイコンも渡す。
+            #[cfg(target_os = "windows")]
+            {
+                use winit::platform::windows::WindowAttributesExtWindows;
+                attrs = attrs.with_taskbar_icon(Some(icon.clone()));
+            }
             attrs = attrs.with_window_icon(Some(icon));
         }
         #[cfg(target_os = "macos")]

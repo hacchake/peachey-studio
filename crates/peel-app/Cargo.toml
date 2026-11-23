@@ -12,6 +12,10 @@ rust-version.workspace = true
 name = "peachey-studio"
 path = "src/main.rs"
 
+# Windows の exe に桃のアイコンを埋め込む（build.rs）。
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
 [dependencies]
 peel-ui.workspace = true
 peel-session.workspace = true

@@ -138,7 +138,7 @@ pub fn draw(ui: &mut Ui, data: WelcomeData) -> Option<WelcomeAction> {
 
         // Brand.
         let brand = left.cut_top(56.0);
-        crate::util::logo(ui, vec2(brand.x + 22.0, brand.center().y), 20.0, t.panel);
+        crate::util::logo(ui, vec2(brand.x + 22.0, brand.center().y), 20.0);
         let mut tr = brand;
         tr.cut_left(56.0);
         tr.cut_top(4.0);
