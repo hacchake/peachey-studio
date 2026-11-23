@@ -1,4 +1,4 @@
-//! Peel Studio desktop application.
+//! Peachey Studio desktop application.
 
 mod analysis_view;
 mod audio_io;
@@ -70,7 +70,7 @@ fn main() {
         } else if arg == "--mcp-headless" {
             headless = true;
         } else if arg == "--help" || arg == "-h" {
-            eprintln!("Usage: peel-studio [--mcp | --mcp-headless] [project.peelproj]");
+            eprintln!("Usage: peachey-studio [--mcp | --mcp-headless] [project.peelproj]");
             return;
         } else if arg.to_string_lossy().starts_with('-') || open.is_some() {
             eprintln!("Unknown argument: {}", arg.to_string_lossy());
@@ -104,7 +104,7 @@ fn main() {
         session.set_input_channels(c);
     }
     let options = WindowOptions {
-        title: "Peel Studio".into(),
+        title: "Peachey Studio".into(),
         // A Windows native menu takes F10 and Alt from the editors.
         native_menus: cfg!(target_os = "macos"),
         ..Default::default()
@@ -120,12 +120,12 @@ fn main() {
         studio
     });
     if let Err(e) = result {
-        eprintln!("Peel Studio could not start: {e}");
+        eprintln!("Peachey Studio could not start: {e}");
         std::process::exit(1);
     }
 }
 
-/// Peel Studio opens on a blank project. The demo songs are for
+/// Peachey Studio opens on a blank project. The demo songs are for
 /// development: `PEEL_DEMO=1` asks for the first, `PEEL_DEMO=<title>` for
 /// one by name, and screenshot runs (`PEEL_SCREENSHOT`) get the first
 /// unless `PEEL_DEMO=0`, since their view hooks expect its channels.

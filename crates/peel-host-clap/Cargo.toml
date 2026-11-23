@@ -1,6 +1,6 @@
 [package]
 name = "peel-host-clap"
-description = "CLAP plugin host for Peel Studio"
+description = "CLAP plugin host for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

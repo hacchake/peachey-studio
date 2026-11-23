@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draws the Peel Studio icon (a citrus disc with a curl of peel) as PNGs.
+"""Draws the Peachey Studio icon (a citrus disc with a curl of peel) as PNGs.
 
 Pure Python, no dependencies: signed distances with analytic edge
 antialiasing, written with zlib. Usage: make-icon.py OUT_DIR

@@ -1,6 +1,6 @@
 [package]
 name = "peel-extensions"
-description = "JavaScript and Lua actions for Peel Studio"
+description = "JavaScript and Lua actions for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,6 +1,6 @@
 [package]
 name = "peel-mcp"
-description = "MCP tools for Peel Studio's desktop and headless sessions"
+description = "MCP tools for Peachey Studio's desktop and headless sessions"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

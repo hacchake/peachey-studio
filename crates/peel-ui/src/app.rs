@@ -169,7 +169,7 @@ pub struct WindowOptions {
 impl Default for WindowOptions {
     fn default() -> Self {
         WindowOptions {
-            title: "Peel Studio".into(),
+            title: "Peachey Studio".into(),
             size: (1440.0, 900.0),
             min_size: (1200.0, 720.0),
             icon_png: None,

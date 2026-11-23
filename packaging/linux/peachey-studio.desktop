@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=Peel Studio
+Name=Peachey Studio
 GenericName=Music Workstation
 Comment=Pattern-based music workstation
-Exec=peel-studio %f
-Icon=peel-studio
+Exec=peachey-studio %f
+Icon=peachey-studio
 Terminal=false
 Categories=AudioVideo;Audio;Midi;Music;
 MimeType=application/x-peel-project;audio/midi;

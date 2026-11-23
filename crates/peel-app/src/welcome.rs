@@ -144,7 +144,7 @@ pub fn draw(ui: &mut Ui, data: WelcomeData) -> Option<WelcomeAction> {
         tr.cut_top(4.0);
         ui.text(
             tr.cut_top(30.0),
-            "Peel Studio",
+            "Peachey Studio",
             t.heading.size(22.0),
             t.text,
             Align::Start,

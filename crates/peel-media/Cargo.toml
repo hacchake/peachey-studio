@@ -1,6 +1,6 @@
 [package]
 name = "peel-media"
-description = "Audio decoding, encoding and waveform caches for Peel Studio"
+description = "Audio decoding, encoding and waveform caches for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -144,8 +144,8 @@ struct Server {
 impl ServerHandler for Server {
     fn get_info(&self) -> ServerConfig {
         ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
-            .with_server_info(Implementation::new("peel-studio", env!("CARGO_PKG_VERSION")))
-            .with_instructions("Peel Studio music workstation. Start with peel_help, peel_status and peel_read_project. Times are exact strings in quarter notes (e.g. \"1/3\"). IDs are stable UUIDs. Use peel_devices to discover the current instrument/effect catalog. All edits use the live session's undo history. Read a fresh revision before peel_edit_project. File paths must be absolute. Audio export is asynchronous: poll peel_export_job until done. Save your work before disconnecting.")
+            .with_server_info(Implementation::new("peachey-studio", env!("CARGO_PKG_VERSION")))
+            .with_instructions("Peachey Studio music workstation. Start with peel_help, peel_status and peel_read_project. Times are exact strings in quarter notes (e.g. \"1/3\"). IDs are stable UUIDs. Use peel_devices to discover the current instrument/effect catalog. All edits use the live session's undo history. Read a fresh revision before peel_edit_project. File paths must be absolute. Audio export is asynchronous: poll peel_export_job until done. Save your work before disconnecting.")
     }
 
     async fn list_tools(

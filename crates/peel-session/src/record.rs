@@ -450,7 +450,7 @@ impl Session {
         let shared = self.engine.input();
         let listened = shared.callbacks() as f64 * shared.input_block_seconds();
         (shared.is_open() && listened >= 3.0 && !shared.heard_signal()).then(|| {
-            "The input has been completely silent. Check the cable, the interface's gain and mute, and that Peel Studio may use the microphone (System Settings, Privacy & Security, Microphone)."
+            "The input has been completely silent. Check the cable, the interface's gain and mute, and that Peachey Studio may use the microphone (System Settings, Privacy & Security, Microphone)."
                 .to_string()
         })
     }

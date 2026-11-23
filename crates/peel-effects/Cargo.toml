@@ -1,6 +1,6 @@
 [package]
 name = "peel-effects"
-description = "Native effects for Peel Studio"
+description = "Native effects for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

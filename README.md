@@ -2,7 +2,7 @@
   <img src="assets/icons/peel-256.png" width="96" alt="">
 </p>
 
-<h1 align="center">Peel Studio</h1>
+<h1 align="center">Peachey Studio</h1>
 
 <p align="center">
   A pattern-based music workstation for macOS, Windows and Linux.<br>
@@ -10,14 +10,18 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Vheissu/peel-studio/actions/workflows/ci.yml"><img src="https://github.com/Vheissu/peel-studio/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/hacchake/peachey-studio/actions/workflows/ci.yml"><img src="https://github.com/hacchake/peachey-studio/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="License: GPL-3.0-or-later"></a>
 </p>
 
-![Peel Studio playing the Afterglow demo: browser, playlist, channel rack and device panel](docs/images/studio.png)
+> Peachey Studio is a fork of [Peel Studio](https://github.com/Vheissu/peel-studio)
+> by Dwayne Charrington, distributed under the same GPL-3.0-or-later license.
+> It is maintained separately and isn't endorsed by the Peel Studio project.
+
+![Peachey Studio playing the Afterglow demo: browser, playlist, channel rack and device panel](docs/images/studio.png)
 
 Build a beat or a melody as a pattern, paint it into an arrangement, then
-change the pattern once and every copy follows. Peel Studio ships with
+change the pattern once and every copy follows. Peachey Studio ships with
 recorded drums, guitars and bass, synths, an 808 that slides, a full mixer
 and four finished demo songs to pull apart.
 
@@ -26,7 +30,7 @@ on Metal, D3D12 or Vulkan, and a lock-free realtime engine. There is no
 web view.
 
 > [!NOTE]
-> Peel Studio is in early development. The core editors, engine, devices
+> Peachey Studio is in early development. The core editors, engine, devices
 > and file format work today. [docs/ROADMAP.md](docs/ROADMAP.md) tracks
 > what's next. Expect rough edges, and please report them.
 
@@ -80,7 +84,7 @@ allocates.
 
 There are no packaged releases yet. When there are, builds for macOS
 (Apple silicon), Windows and Linux will be on the
-[releases page](https://github.com/Vheissu/peel-studio/releases). Until
+[releases page](https://github.com/hacchake/peachey-studio/releases). Until
 then, build from source.
 
 ## Build from source
@@ -140,7 +144,9 @@ privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-Peel Studio is licensed under [GPL-3.0-or-later](LICENSE).
+Peachey Studio is licensed under [GPL-3.0-or-later](LICENSE). It is based on
+[Peel Studio](https://github.com/Vheissu/peel-studio), copyright its
+contributors; the original copyright notices are kept in the source.
 
 MP3 encoding statically links LAME through `mp3lame-encoder` and
 `mp3lame-sys` (LGPL-3.0); FLAC encoding uses `flacenc` (Apache-2.0). Bundled fonts, icons and recordings keep their own
@@ -149,6 +155,6 @@ palm-muted guitar recordings are CC BY 4.0: if you publish audio that uses
 them, credit them as described in
 [their notice](assets/strings/palm-muted/README.md).
 
-Peel Studio is an independent project. It isn't affiliated with or
+Peachey Studio is an independent project. It isn't affiliated with or
 endorsed by Image-Line, and it doesn't use FL Studio code, artwork, presets
 or samples.

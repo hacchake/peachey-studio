@@ -1,6 +1,6 @@
 [package]
 name = "peel-compose"
-description = "Compositional note tools for Peel Studio: legato, chop, arpeggiate, strum, flam, humanize and more"
+description = "Compositional note tools for Peachey Studio: legato, chop, arpeggiate, strum, flam, humanize and more"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

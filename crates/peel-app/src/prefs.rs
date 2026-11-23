@@ -93,6 +93,9 @@ impl Default for Prefs {
 }
 
 /// `<config>/Peel Studio` (macOS: ~/Library/Application Support).
+///
+/// Peachey Studio に名前を変えた後も、このフォルダ名は変えない。設定・自動
+/// 保存・スクリプトをそのまま引き継ぎ、保存前の録音への参照も切らさないため。
 pub fn app_dir() -> PathBuf {
     dirs::config_dir()
         .unwrap_or_else(std::env::temp_dir)

@@ -1,6 +1,6 @@
 [package]
 name = "peel-dsp"
-description = "Device contracts and DSP primitives for Peel Studio"
+description = "Device contracts and DSP primitives for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -16,8 +16,8 @@ use std::time::{Duration, Instant};
 
 use crate::message::{MidiEvent, Parser};
 
-/// Name of the MIDI client Peel Studio registers with the system.
-const CLIENT_NAME: &str = "Peel Studio";
+/// Name of the MIDI client Peachey Studio registers with the system.
+const CLIENT_NAME: &str = "Peachey Studio";
 /// Longest wait before trying a port that failed to open again.
 const MAX_RETRY_WAIT: Duration = Duration::from_secs(60);
 

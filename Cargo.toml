@@ -7,7 +7,7 @@ default-members = ["crates/peel-app"]
 version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/Vheissu/peel-studio"
+repository = "https://github.com/hacchake/peachey-studio"
 authors = ["Dwayne Charrington <dwaynecharrington@gmail.com>"]
 rust-version = "1.99"
 

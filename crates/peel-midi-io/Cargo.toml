@@ -1,6 +1,6 @@
 [package]
 name = "peel-midi-io"
-description = "Hardware MIDI input for Peel Studio"
+description = "Hardware MIDI input for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

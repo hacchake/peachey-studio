@@ -80,9 +80,9 @@ impl HostBox {
             raw: clap_host {
                 clap_version: CLAP_VERSION,
                 host_data: std::ptr::null_mut(),
-                name: c"Peel Studio".as_ptr(),
-                vendor: c"Peel Studio".as_ptr(),
-                url: c"https://github.com/Vheissu/peel-studio".as_ptr(),
+                name: c"Peachey Studio".as_ptr(),
+                vendor: c"Peachey Studio".as_ptr(),
+                url: c"https://github.com/hacchake/peachey-studio".as_ptr(),
                 version: c"0.1.0".as_ptr(),
                 get_extension: Some(get_extension),
                 request_restart: Some(request_restart),

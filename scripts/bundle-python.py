@@ -90,7 +90,7 @@ def bundle(destination, replace=False):
              "--invalidation-mode", "unchecked-hash",
              "-x", re.escape(str(runtime / "tcl")), runtime], env=env)
         info = {
-            "application": "Peel Studio", "schema": 1,
+            "application": "Peachey Studio", "schema": 1,
             "python": VERSION, "python_build": BUILD, "pytheory": "0.57.13",
             "platform": sys.platform, "architecture": platform.machine(),
             "requirements_sha256": hashlib.sha256(REQUIREMENTS.read_bytes()).hexdigest(),

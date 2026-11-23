@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds "Peel Studio.app" (and a .dmg) in dist/.
+# Builds "Peachey Studio.app" (and a .dmg) in dist/.
 #
 #   scripts/package-macos.sh            # native architecture
 #   SIGN_ID="Developer ID Application: …" scripts/package-macos.sh
@@ -10,12 +10,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VERSION=$(grep -m1 '^version' Cargo.toml | sed 's/.*"\(.*\)"/\1/')
-APP="dist/Peel Studio.app"
+APP="dist/Peachey Studio.app"
 cargo build --release -p peel-app -p peel-host-clap --bins
 
 rm -rf "$APP" dist/iconset
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" dist/iconset
-cp target/release/peel-studio "$APP/Contents/MacOS/peel-studio"
+cp target/release/peachey-studio "$APP/Contents/MacOS/peachey-studio"
 # Plugin scanner: a crashing plugin takes down this helper, not the app.
 cp target/release/peel-clap-scan "$APP/Contents/MacOS/peel-clap-scan"
 # Python and packages ship in the app; nothing is installed at first launch.
@@ -49,22 +49,22 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>Peel Studio</string>
-  <key>CFBundleDisplayName</key><string>Peel Studio</string>
-  <key>CFBundleIdentifier</key><string>io.github.vheissu.peelstudio</string>
+  <key>CFBundleName</key><string>Peachey Studio</string>
+  <key>CFBundleDisplayName</key><string>Peachey Studio</string>
+  <key>CFBundleIdentifier</key><string>io.github.hacchake.peacheystudio</string>
   <key>CFBundleVersion</key><string>${VERSION}</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
-  <key>CFBundleExecutable</key><string>peel-studio</string>
+  <key>CFBundleExecutable</key><string>peachey-studio</string>
   <key>CFBundleIconFile</key><string>Peel</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.music</string>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSMicrophoneUsageDescription</key><string>Peel Studio records audio from the input you choose.</string>
+  <key>NSMicrophoneUsageDescription</key><string>Peachey Studio records audio from the input you choose.</string>
   <key>CFBundleDocumentTypes</key>
   <array>
     <dict>
-      <key>CFBundleTypeName</key><string>Peel Studio Project</string>
+      <key>CFBundleTypeName</key><string>Peachey Studio Project</string>
       <key>CFBundleTypeRole</key><string>Editor</string>
       <key>CFBundleTypeIconFile</key><string>Peel</string>
       <key>LSHandlerRank</key><string>Owner</string>
@@ -86,7 +86,7 @@ uv run --no-project --python 3.12.13 scripts/sign-macos.py "$APP"
 "$APP/Contents/Resources/python/bin/python3" -I -B -c 'from pytheory import TonedScale; assert [t.midi for t in TonedScale(tonic="C4")["major"].triad().tones] == [60,64,67]'
 codesign --verify --deep --strict --verbose=1 "$APP"
 
-DMG="dist/Peel-Studio-${VERSION}-macos-$(uname -m).dmg"
+DMG="dist/Peachey-Studio-${VERSION}-macos-$(uname -m).dmg"
 rm -f "$DMG"
-hdiutil create -quiet -volname "Peel Studio" -srcfolder "$APP" -ov -format UDZO "$DMG"
+hdiutil create -quiet -volname "Peachey Studio" -srcfolder "$APP" -ov -format UDZO "$DMG"
 echo "Built $APP and $DMG"

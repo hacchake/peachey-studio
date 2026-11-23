@@ -1,6 +1,6 @@
 # Python
 
-Peel Studio releases include CPython 3.12.13 (python-build-standalone build
+Peachey Studio releases include CPython 3.12.13 (python-build-standalone build
 20260414), PyTheory 0.57.13 and the packages pinned in `requirements.lock`.
 They run locally without installing Python, downloading packages or changing
 system settings. uv is used only when building a release.

@@ -7,7 +7,7 @@ fn main() {
             audible = true;
         } else if arg == "--help" || arg == "-h" {
             eprintln!(
-                "Usage: peel-mcp [--audio] [project.peelproj]\nMCP over stdio. Silent by default. --audio opens hardware output.\nFor the desktop UI, use peel-studio --mcp [project.peelproj]."
+                "Usage: peel-mcp [--audio] [project.peelproj]\nMCP over stdio. Silent by default. --audio opens hardware output.\nFor the desktop UI, use peachey-studio --mcp [project.peelproj]."
             );
             return;
         } else if arg.to_string_lossy().starts_with('-') || project.is_some() {

@@ -174,9 +174,9 @@ pub fn bar(studio: &Studio, mac: bool) -> MenuBar {
     let mut menus = Vec::new();
 
     if mac {
-        let mut app = Menu::new("Peel Studio").role(MenuRole::App);
+        let mut app = Menu::new("Peachey Studio").role(MenuRole::App);
         app.push(MenuEntry::Standard(StandardItem::About {
-            name: "Peel Studio".into(),
+            name: "Peachey Studio".into(),
             version: env!("CARGO_PKG_VERSION").into(),
         }));
         app.separator();
@@ -188,7 +188,7 @@ pub fn bar(studio: &Studio, mac: bool) -> MenuBar {
         app.push(MenuEntry::Standard(StandardItem::HideOthers));
         app.push(MenuEntry::Standard(StandardItem::ShowAll));
         app.separator();
-        app.push(cmd(Command::Quit, "Quit Peel Studio").shortcut(Shortcut::cmd('q')));
+        app.push(cmd(Command::Quit, "Quit Peachey Studio").shortcut(Shortcut::cmd('q')));
         menus.push(app);
     }
 
@@ -375,7 +375,7 @@ pub fn bar(studio: &Studio, mac: bool) -> MenuBar {
     if !mac && cfg!(target_os = "windows") {
         help.separator();
         help.push(MenuEntry::Standard(StandardItem::About {
-            name: "Peel Studio".into(),
+            name: "Peachey Studio".into(),
             version: env!("CARGO_PKG_VERSION").into(),
         }));
     }

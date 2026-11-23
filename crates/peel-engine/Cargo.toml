@@ -1,6 +1,6 @@
 [package]
 name = "peel-engine"
-description = "Realtime audio engine for Peel Studio"
+description = "Realtime audio engine for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

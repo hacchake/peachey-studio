@@ -1,6 +1,6 @@
 [package]
 name = "peel-cli"
-description = "Headless Peel Studio tools: validate and render projects"
+description = "Headless Peachey Studio tools: validate and render projects"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,6 +1,6 @@
 [package]
 name = "peel-instruments"
-description = "Native instruments for Peel Studio"
+description = "Native instruments for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

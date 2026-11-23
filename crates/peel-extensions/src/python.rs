@@ -35,9 +35,9 @@ pub(super) fn execute(
     command.args(["-I", "-B", "-u", "-c", include_str!("python_host.py")]);
     let output = super::process::execute(command, payload, budget).map_err(|e| {
         if is_bundled {
-            format!("Bundled Python: {e}. Reinstall Peel Studio if its runtime is damaged.")
+            format!("Bundled Python: {e}. Reinstall Peachey Studio if its runtime is damaged.")
         } else {
-            format!("Python: {e}. Choose a Python interpreter, or use a packaged Peel Studio release with bundled PyTheory.")
+            format!("Python: {e}. Choose a Python interpreter, or use a packaged Peachey Studio release with bundled PyTheory.")
         }
     })?;
     let mut result: serde_json::Value =
@@ -72,7 +72,9 @@ fn bundled_at(executable: &Path) -> Result<Option<PathBuf>, String> {
             "bin/python3"
         });
         if !python.is_file() {
-            return Err("The bundled Python runtime is incomplete. Reinstall Peel Studio.".into());
+            return Err(
+                "The bundled Python runtime is incomplete. Reinstall Peachey Studio.".into(),
+            );
         }
         return Ok(Some(python));
     }
@@ -103,11 +105,11 @@ mod tests {
         let root = std::env::temp_dir().join(format!("peel-runtime-{}", peel_document::Id::new()));
         for (binary, runtime) in [
             (
-                "Peel Studio.app/Contents/MacOS/peel-studio",
-                "Peel Studio.app/Contents/Resources/python",
+                "Peachey Studio.app/Contents/MacOS/peachey-studio",
+                "Peachey Studio.app/Contents/Resources/python",
             ),
-            ("portable/peel-studio", "portable/python"),
-            ("linux/bin/peel-studio", "linux/lib/peel/python"),
+            ("portable/peachey-studio", "portable/python"),
+            ("linux/bin/peachey-studio", "linux/lib/peel/python"),
         ] {
             let binary = root.join(binary);
             std::fs::create_dir_all(binary.parent().unwrap()).unwrap();

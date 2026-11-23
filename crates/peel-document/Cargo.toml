@@ -1,6 +1,6 @@
 [package]
 name = "peel-document"
-description = "Musical document model, validation and undo for Peel Studio"
+description = "Musical document model, validation and undo for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

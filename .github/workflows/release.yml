@@ -39,39 +39,39 @@ jobs:
         shell: pwsh
         run: |
           cargo build --release -p peel-app -p peel-cli -p peel-host-clap --bins
-          New-Item -ItemType Directory -Force dist/PeelStudio | Out-Null
-          Copy-Item target/release/peel-studio.exe dist/PeelStudio/
-          Copy-Item target/release/peel.exe dist/PeelStudio/
-          Copy-Item target/release/peel-clap-scan.exe dist/PeelStudio/
-          uv run --no-project --python 3.12.13 scripts/bundle-python.py dist/PeelStudio/python
-          Copy-Item LICENSE, README.md, assets/LICENSES.md, docs/SCRIPTING.md dist/PeelStudio/
-          New-Item -ItemType Directory -Force dist/PeelStudio/sound-licenses | Out-Null
-          Copy-Item assets/drums/big-rusty/LICENSE.txt, assets/drums/big-rusty/README.md, assets/drums/big-rusty/manifest.json dist/PeelStudio/sound-licenses/
-          New-Item -ItemType Directory -Force dist/PeelStudio/sound-licenses/strings | Out-Null
-          Copy-Item assets/strings/recorded/LICENSE-guitar.txt, assets/strings/recorded/LICENSE-bass.txt, assets/strings/recorded/README.md, assets/strings/recorded/manifest.json dist/PeelStudio/sound-licenses/strings/
-          New-Item -ItemType Directory -Force dist/PeelStudio/sound-licenses/palm-muted | Out-Null
-          Copy-Item assets/strings/palm-muted/LICENSE.txt, assets/strings/palm-muted/NOTICE.txt, assets/strings/palm-muted/README.md, assets/strings/palm-muted/manifest.json dist/PeelStudio/sound-licenses/palm-muted/
-          Compress-Archive -Path dist/PeelStudio -DestinationPath dist/Peel-Studio-windows-x64.zip
+          New-Item -ItemType Directory -Force dist/PeacheyStudio | Out-Null
+          Copy-Item target/release/peachey-studio.exe dist/PeacheyStudio/
+          Copy-Item target/release/peel.exe dist/PeacheyStudio/
+          Copy-Item target/release/peel-clap-scan.exe dist/PeacheyStudio/
+          uv run --no-project --python 3.12.13 scripts/bundle-python.py dist/PeacheyStudio/python
+          Copy-Item LICENSE, README.md, assets/LICENSES.md, docs/SCRIPTING.md dist/PeacheyStudio/
+          New-Item -ItemType Directory -Force dist/PeacheyStudio/sound-licenses | Out-Null
+          Copy-Item assets/drums/big-rusty/LICENSE.txt, assets/drums/big-rusty/README.md, assets/drums/big-rusty/manifest.json dist/PeacheyStudio/sound-licenses/
+          New-Item -ItemType Directory -Force dist/PeacheyStudio/sound-licenses/strings | Out-Null
+          Copy-Item assets/strings/recorded/LICENSE-guitar.txt, assets/strings/recorded/LICENSE-bass.txt, assets/strings/recorded/README.md, assets/strings/recorded/manifest.json dist/PeacheyStudio/sound-licenses/strings/
+          New-Item -ItemType Directory -Force dist/PeacheyStudio/sound-licenses/palm-muted | Out-Null
+          Copy-Item assets/strings/palm-muted/LICENSE.txt, assets/strings/palm-muted/NOTICE.txt, assets/strings/palm-muted/README.md, assets/strings/palm-muted/manifest.json dist/PeacheyStudio/sound-licenses/palm-muted/
+          Compress-Archive -Path dist/PeacheyStudio -DestinationPath dist/Peachey-Studio-windows-x64.zip
       - name: Package Linux
         if: runner.os == 'Linux'
         run: |
           cargo build --release -p peel-app -p peel-cli -p peel-host-clap --bins
-          mkdir -p dist/peel-studio/share/applications dist/peel-studio/share/icons/hicolor/256x256/apps dist/peel-studio/bin
-          cp target/release/peel-studio target/release/peel target/release/peel-clap-scan dist/peel-studio/bin/
-          cp packaging/linux/peel-studio.desktop dist/peel-studio/share/applications/
-          cp assets/icons/peel-256.png dist/peel-studio/share/icons/hicolor/256x256/apps/peel-studio.png
-          uv run --no-project --python 3.12.13 scripts/bundle-python.py dist/peel-studio/lib/peel/python
-          cp LICENSE README.md assets/LICENSES.md docs/SCRIPTING.md dist/peel-studio/
-          mkdir -p dist/peel-studio/sound-licenses
-          cp assets/drums/big-rusty/LICENSE.txt assets/drums/big-rusty/README.md assets/drums/big-rusty/manifest.json dist/peel-studio/sound-licenses/
-          mkdir -p dist/peel-studio/sound-licenses/strings
-          cp assets/strings/recorded/LICENSE-guitar.txt assets/strings/recorded/LICENSE-bass.txt assets/strings/recorded/README.md assets/strings/recorded/manifest.json dist/peel-studio/sound-licenses/strings/
-          mkdir -p dist/peel-studio/sound-licenses/palm-muted
-          cp assets/strings/palm-muted/{LICENSE.txt,NOTICE.txt,README.md,manifest.json} dist/peel-studio/sound-licenses/palm-muted/
-          tar -C dist -czf dist/Peel-Studio-linux-x64.tar.gz peel-studio
+          mkdir -p dist/peachey-studio/share/applications dist/peachey-studio/share/icons/hicolor/256x256/apps dist/peachey-studio/bin
+          cp target/release/peachey-studio target/release/peel target/release/peel-clap-scan dist/peachey-studio/bin/
+          cp packaging/linux/peachey-studio.desktop dist/peachey-studio/share/applications/
+          cp assets/icons/peel-256.png dist/peachey-studio/share/icons/hicolor/256x256/apps/peachey-studio.png
+          uv run --no-project --python 3.12.13 scripts/bundle-python.py dist/peachey-studio/lib/peel/python
+          cp LICENSE README.md assets/LICENSES.md docs/SCRIPTING.md dist/peachey-studio/
+          mkdir -p dist/peachey-studio/sound-licenses
+          cp assets/drums/big-rusty/LICENSE.txt assets/drums/big-rusty/README.md assets/drums/big-rusty/manifest.json dist/peachey-studio/sound-licenses/
+          mkdir -p dist/peachey-studio/sound-licenses/strings
+          cp assets/strings/recorded/LICENSE-guitar.txt assets/strings/recorded/LICENSE-bass.txt assets/strings/recorded/README.md assets/strings/recorded/manifest.json dist/peachey-studio/sound-licenses/strings/
+          mkdir -p dist/peachey-studio/sound-licenses/palm-muted
+          cp assets/strings/palm-muted/{LICENSE.txt,NOTICE.txt,README.md,manifest.json} dist/peachey-studio/sound-licenses/palm-muted/
+          tar -C dist -czf dist/Peachey-Studio-linux-x64.tar.gz peachey-studio
       - uses: actions/upload-artifact@v4
         with:
-          name: peel-studio-${{ matrix.name }}
+          name: peachey-studio-${{ matrix.name }}
           path: |
             dist/*.dmg
             dist/*.zip

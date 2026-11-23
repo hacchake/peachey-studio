@@ -1,6 +1,6 @@
 [package]
 name = "peel-ui"
-description = "GPU widget toolkit for Peel Studio"
+description = "GPU widget toolkit for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

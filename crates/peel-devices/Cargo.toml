@@ -1,6 +1,6 @@
 [package]
 name = "peel-devices"
-description = "Native device registry for Peel Studio"
+description = "Native device registry for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

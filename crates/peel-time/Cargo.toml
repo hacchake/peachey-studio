@@ -1,6 +1,6 @@
 [package]
 name = "peel-time"
-description = "Exact musical time, tempo and meter for Peel Studio"
+description = "Exact musical time, tempo and meter for Peachey Studio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

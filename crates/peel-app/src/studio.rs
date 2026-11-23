@@ -1530,7 +1530,7 @@ impl Studio {
             ""
         };
         win.set_title(&format!(
-            "{}{} — Peel Studio",
+            "{}{} — Peachey Studio",
             self.session.project().meta.title,
             dirty
         ));
