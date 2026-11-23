@@ -485,7 +485,7 @@ impl Session {
             .collect();
         for (id, slot, type_id, params, sample) in installed {
             let device = match crate::find_device(&project, id) {
-                Some(inst) if type_id.starts_with("clap:") => self.create_device(inst),
+                Some(inst) if crate::plugins::is_plugin_type(&type_id) => self.create_device(inst),
                 _ => peel_devices::create(&type_id),
             };
             let Some(mut device) = device else {

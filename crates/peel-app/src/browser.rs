@@ -263,7 +263,7 @@ fn devices(
     let plugins: Vec<PluginRow> = s
         .plugins()
         .iter()
-        .filter(|p| (p.role == peel_host_clap::ClapRole::Instrument) == instrument)
+        .filter(|p| p.is_instrument() == instrument)
         .filter(|p| {
             query.is_empty()
                 || p.name.to_lowercase().contains(query)

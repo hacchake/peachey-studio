@@ -48,7 +48,10 @@ pub use peel_engine::{
     InputChannels, InputDeviceInfo, InputInfo, InputInjector, LatencyReport, list_input_devices,
 };
 pub use perform::{Slot as PerformSlot, SlotState};
-pub use plugins::{PluginRegistry, type_id_for as plugin_type_id};
+pub use plugins::{
+    PluginFormat, PluginHandle, PluginInfo, PluginRegistry, is_plugin_type,
+    type_id_for as plugin_type_id,
+};
 pub use record::{MonitorStatus, RecordingStatus};
 pub use samples::SampleLoader;
 
@@ -394,7 +397,7 @@ impl Session {
         if let Some(d) = peel_devices::create(&inst.type_id) {
             return Some(d);
         }
-        if inst.type_id.starts_with("clap:") {
+        if plugins::is_plugin_type(&inst.type_id) {
             let (rate, block) = (self.engine.sample_rate(), self.engine.max_block());
             match self.plugins.create(inst, rate, block) {
                 Ok(d) => return Some(d),
@@ -416,8 +419,9 @@ impl Session {
             .map_or(0.0, |d| self.engine.telemetry().take_reduction(d.slot))
     }
 
-    /// Installed CLAP plugins (empty until the background scan finishes).
-    pub fn plugins(&self) -> &[peel_host_clap::ClapPluginInfo] {
+    /// Installed CLAP and VST3 plugins (empty until the background scan
+    /// finishes).
+    pub fn plugins(&self) -> &[PluginInfo] {
         self.plugins.plugins()
     }
 
@@ -452,6 +456,7 @@ impl Session {
         for (id, state) in self.plugins.capture_states() {
             if let Some(d) = find_device_mut(&mut project, id) {
                 d.state = Some(state);
+                self.plugins.sync_params(d);
             }
         }
         project
@@ -470,13 +475,43 @@ impl Session {
                 slot.state = Some(state.clone());
             }
         }
+        let plugins = &self.plugins;
         self.doc.patch(|p| {
             for (id, state) in states {
                 if let Some(d) = find_device_mut(p, id) {
                     d.state = Some(state);
+                    plugins.sync_params(d);
                 }
             }
         });
+    }
+
+    /// Whether the plugin behind `device` can open its own window.
+    pub fn plugin_has_editor(&self, device: Id) -> bool {
+        self.plugins
+            .handle(device)
+            .is_some_and(PluginHandle::has_editor)
+    }
+
+    /// Whether the plugin window for `device` is showing.
+    pub fn plugin_editor_open(&self, device: Id) -> bool {
+        self.plugins
+            .handle(device)
+            .is_some_and(PluginHandle::editor_open)
+    }
+
+    /// Opens (or brings forward) the plugin's own window.
+    pub fn open_plugin_editor(&mut self, device: Id) -> Result<(), String> {
+        self.plugins
+            .handle(device)
+            .ok_or_else(|| "This plugin is not loaded".to_string())?
+            .open_editor()
+    }
+
+    pub fn close_plugin_editor(&self, device: Id) {
+        if let Some(h) = self.plugins.handle(device) {
+            h.close_editor();
+        }
     }
 
     fn install_device(&mut self, inst: &DeviceInstance, project: &Project) {
@@ -1228,11 +1263,7 @@ impl Session {
 
     /// Plugin instances for an offline render of `p`, made here on the main
     /// thread from their current state.
-    fn offline_plugins(
-        &mut self,
-        p: &Project,
-        rate: u32,
-    ) -> (export::Prebuilt, Vec<peel_host_clap::ClapHandle>) {
+    fn offline_plugins(&mut self, p: &Project, rate: u32) -> (export::Prebuilt, Vec<PluginHandle>) {
         let mut prebuilt = export::Prebuilt::new();
         let mut handles = Vec::new();
         let instances = p
@@ -1240,7 +1271,7 @@ impl Session {
             .iter()
             .map(|c| &c.device)
             .chain(p.mixer.tracks.iter().flat_map(|t| t.inserts.iter()))
-            .filter(|d| d.type_id.starts_with("clap:"));
+            .filter(|d| plugins::is_plugin_type(&d.type_id));
         for inst in instances {
             match self.plugins.create_offline(inst, rate as f32, 512) {
                 Ok((dev, handle)) => {

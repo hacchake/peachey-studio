@@ -38,11 +38,12 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          cargo build --release -p peel-app -p peel-cli -p peel-host-clap --bins
+          cargo build --release -p peel-app -p peel-cli -p peel-host-clap -p peel-host-vst3 --bins
           New-Item -ItemType Directory -Force dist/PeacheyStudio | Out-Null
           Copy-Item target/release/peachey-studio.exe dist/PeacheyStudio/
           Copy-Item target/release/peel.exe dist/PeacheyStudio/
           Copy-Item target/release/peel-clap-scan.exe dist/PeacheyStudio/
+          Copy-Item target/release/peel-vst3-scan.exe dist/PeacheyStudio/
           uv run --no-project --python 3.12.13 scripts/bundle-python.py dist/PeacheyStudio/python
           Copy-Item LICENSE, README.md, assets/LICENSES.md, docs/SCRIPTING.md dist/PeacheyStudio/
           New-Item -ItemType Directory -Force dist/PeacheyStudio/sound-licenses | Out-Null

@@ -13,3 +13,4 @@ peel-dsp.workspace = true
 peel-instruments.workspace = true
 peel-effects.workspace = true
 peel-host-clap = { path = "../peel-host-clap" }
+peel-host-vst3 = { path = "../peel-host-vst3" }

@@ -14,7 +14,7 @@ pub enum Action {
     Help {},
     /// Generate stable UUIDs for objects added with edit_project. Count must be 1..=256.
     NewIds { count: usize },
-    /// Discover native instruments, effects, installed CLAP plugins, parameter ranges and factory presets. Filter by type_id for full details.
+    /// Discover native instruments, effects, installed CLAP and VST3 plugins, parameter ranges and factory presets. Filter by type_id for full details.
     Devices { type_id: Option<String> },
     /// Create an empty project, or load a built-in song: demo true loads the first demo song, and song names a demo song by title or a song starter by name (an unknown name is refused with the list of valid ones). Refuses to discard unsaved work unless discard_changes is true.
     NewProject {
@@ -73,8 +73,10 @@ pub enum Action {
         offset: Option<usize>,
         limit: Option<usize>,
     },
-    /// Rescan installed CLAP plugins in the background. Poll status for plugins_scanning.
+    /// Rescan installed CLAP and VST3 plugins in the background. Poll status for plugins_scanning.
     RescanPlugins {},
+    /// Open (default) or close a plugin instrument's or effect's own window. VST3 plugins on Windows; the window appears on the desktop next to the studio.
+    PluginWindow { device: String, open: Option<bool> },
     /// Place a linked pattern clip in an arrangement lane. A length longer than the pattern repeats it.
     PlacePattern {
         pattern: String,

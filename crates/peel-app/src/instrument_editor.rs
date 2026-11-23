@@ -1,7 +1,7 @@
 //! Instrument editor: a large sheet with the instrument's parameters, a
 //! playable piano (mouse and computer keyboard) and the MIDI controls that
-//! reach it. Plugin instruments get the same parameter panel; native
-//! plugin windows are not embedded by the host.
+//! reach it. Plugin instruments get the same parameter panel; a VST3
+//! plugin's own window opens separately from the panel's button.
 //!
 //! Notes never hang: mouse notes end when the button comes up, the pointer
 //! leaves the window, the editor closes, the target changes or the window
@@ -419,8 +419,8 @@ fn params(
     };
     let mut c = body;
     let mut top = c.cut_top(26.0);
-    let is_plugin = ch.device.type_id.starts_with("clap:");
-    if is_plugin {
+    let is_plugin = peel_session::is_plugin_type(&ch.device.type_id);
+    if is_plugin && !s.plugin_has_editor(ch.device.id) {
         ui.text(
             top.cut_right(300.0),
             "Plugin windows are not embedded. Parameters are below.",

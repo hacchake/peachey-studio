@@ -18,12 +18,14 @@ pub fn effects() -> impl Iterator<Item = &'static DeviceDescriptor> {
     all().filter(|d| d.kind == DeviceKind::Effect)
 }
 
-/// Descriptor for a native device type, or for a CLAP plugin
-/// (`clap:<id>`) once an instance of it has been loaded.
+/// Descriptor for a native device type, or for a CLAP (`clap:<id>`) or
+/// VST3 (`vst3:<class id>`) plugin once an instance of it has been loaded.
 pub fn descriptor(type_id: &str) -> Option<&'static DeviceDescriptor> {
     all().find(|d| d.type_id == type_id).or_else(|| {
         if type_id.starts_with("clap:") {
             peel_host_clap::cached_descriptor(type_id)
+        } else if type_id.starts_with("vst3:") {
+            peel_host_vst3::cached_descriptor(type_id)
         } else {
             None
         }

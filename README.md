@@ -55,7 +55,8 @@ web view.
 - **21 effects.** EQ, compressor, multiband, limiter, delay, reverb,
   distortion, filter, modulation, Tape, Gate, Glitch, Crush and a
   mastering chain. Over 380 factory presets across instruments and
-  effects, and CLAP plugins load alongside them.
+  effects, and CLAP and VST3 plugins load alongside them. On Windows a
+  VST3 plugin's own window opens from its device panel.
 - **Arrangement.** Pattern, audio and automation clips, fades, slicing,
   markers, tempo changes and ramps, alternate arrangements, and audio
   loops that follow the tempo.
@@ -154,6 +155,10 @@ licenses, listed in [assets/LICENSES.md](assets/LICENSES.md). The
 palm-muted guitar recordings are CC BY 4.0: if you publish audio that uses
 them, credit them as described in
 [their notice](assets/strings/palm-muted/README.md).
+
+VST is a registered trademark of Steinberg Media Technologies GmbH.
+VST3 hosting uses the [`vst3`](https://crates.io/crates/vst3) bindings
+(MIT or Apache-2.0).
 
 Peachey Studio is an independent project. It isn't affiliated with or
 endorsed by Image-Line, and it doesn't use FL Studio code, artwork, presets

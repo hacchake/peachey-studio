@@ -114,7 +114,7 @@ pub struct ExportJob {
     result: Arc<Mutex<Option<Result<PathBuf, String>>>>,
     /// Plugin instances rendering in the job. Kept here so they are
     /// serviced from, and finally destroyed on, the main thread.
-    plugins: Vec<peel_host_clap::ClapHandle>,
+    plugins: Vec<crate::PluginHandle>,
 }
 
 /// Devices built on the main thread for an export (plugins), by instance id.
@@ -186,7 +186,7 @@ impl ExportJob {
         samples: HashMap<Id, Arc<SampleBuffer>>,
         loads: Vec<(Id, PathBuf)>,
         prebuilt: Prebuilt,
-        plugins: Vec<peel_host_clap::ClapHandle>,
+        plugins: Vec<crate::PluginHandle>,
         settings: impl Into<AudioExportSettings>,
     ) -> ExportJob {
         let settings = settings.into();
@@ -206,7 +206,7 @@ impl ExportJob {
         renders: Vec<Render>,
         samples: HashMap<Id, Arc<SampleBuffer>>,
         loads: Vec<(Id, PathBuf)>,
-        plugins: Vec<peel_host_clap::ClapHandle>,
+        plugins: Vec<crate::PluginHandle>,
         sample_rate: u32,
         done: Option<PathBuf>,
     ) -> ExportJob {

@@ -79,7 +79,7 @@ for live state, and `peel_read_project` for the document and its revision.
 | Play | `peel_transport`, `peel_live_note`, `peel_preview_audio` |
 | Import | `peel_import_audio`, `peel_import_midi` |
 | Export | `peel_export_audio`, `peel_export_job`, `peel_export_midi`, `peel_bounce_clip` |
-| Hardware | `peel_audio_devices`, `peel_configure_audio`, `peel_configure_midi`, `peel_rescan_plugins` |
+| Hardware | `peel_audio_devices`, `peel_configure_audio`, `peel_configure_midi`, `peel_rescan_plugins`, `peel_plugin_window` |
 | Routing | `peel_output_routes`, `peel_configure_output_routes`, `peel_configure_output_channels` |
 | Controllers | `peel_midi_controls`, `peel_configure_midi_controls`, `peel_midi_learn`, `peel_midi_control`, `peel_midi_expression`, `peel_mpe`, `peel_midi_input` |
 | Record | `peel_configure_recording`, `peel_arm_lane`, `peel_recording`, `peel_close_input` |

@@ -92,6 +92,15 @@ impl Control {
                 s.rescan_plugins();
                 Ok(json!({"scanning":s.plugins_scanning()}))
             }
+            Action::PluginWindow { device, open } => {
+                let device_id = id(&device)?;
+                if open.unwrap_or(true) {
+                    s.open_plugin_editor(device_id)?;
+                } else {
+                    s.close_plugin_editor(device_id);
+                }
+                Ok(json!({"open": s.plugin_editor_open(device_id)}))
+            }
             Action::BrowseFiles {
                 directory,
                 offset,
