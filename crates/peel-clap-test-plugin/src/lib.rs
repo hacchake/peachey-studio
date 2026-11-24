@@ -181,6 +181,8 @@ struct Plugin {
     /// A call arrived on the wrong thread.
     bad_thread: bool,
     voices: [Voice; VOICE_COUNT],
+    /// The gain plugin's window (a Win32 child of the host's window).
+    gui_child: *mut c_void,
 }
 
 unsafe fn plugin_of<'a>(plugin: *const clap_plugin) -> &'a mut Plugin {
@@ -784,31 +786,149 @@ static TAIL: clap_plugin_tail = clap_plugin_tail {
     get: Some(tail_get),
 };
 
+// The gain plugin's window: on Windows, a static text control embedded in
+// the host's window. It asks the host to grow once it is attached, so hosts
+// can test `request_resize`. Elsewhere no window can be created.
+const GUI_SIZE: (u32, u32) = (360, 200);
+/// What the window asks to grow to after `set_parent`.
+pub const GUI_REQUESTED_SIZE: (u32, u32) = (400, 240);
+
 unsafe extern "C" fn gui_is_api_supported(
     _plugin: *const clap_plugin,
-    _api: *const c_char,
-    _floating: bool,
+    api: *const c_char,
+    floating: bool,
 ) -> bool {
-    false
+    cfg!(windows) && !floating && !api.is_null() && CStr::from_ptr(api) == CLAP_WINDOW_API_WIN32
 }
 
-// Only presence matters to the host; no window can actually be created.
+unsafe extern "C" fn gui_create(
+    plugin: *const clap_plugin,
+    api: *const c_char,
+    floating: bool,
+) -> bool {
+    gui_is_api_supported(plugin, api, floating)
+}
+
+unsafe extern "C" fn gui_destroy(plugin: *const clap_plugin) {
+    let p = plugin_of(plugin);
+    if !p.gui_child.is_null() {
+        #[cfg(windows)]
+        windows_sys::Win32::UI::WindowsAndMessaging::DestroyWindow(p.gui_child);
+        p.gui_child = null_mut();
+    }
+}
+
+unsafe extern "C" fn gui_set_scale(_plugin: *const clap_plugin, _scale: f64) -> bool {
+    true
+}
+
+unsafe extern "C" fn gui_get_size(plugin: *const clap_plugin, w: *mut u32, h: *mut u32) -> bool {
+    let _ = plugin;
+    *w = GUI_SIZE.0;
+    *h = GUI_SIZE.1;
+    true
+}
+
+unsafe extern "C" fn gui_can_resize(_plugin: *const clap_plugin) -> bool {
+    true
+}
+
+unsafe extern "C" fn gui_adjust_size(
+    _plugin: *const clap_plugin,
+    _w: *mut u32,
+    _h: *mut u32,
+) -> bool {
+    true
+}
+
+unsafe extern "C" fn gui_set_size(plugin: *const clap_plugin, w: u32, h: u32) -> bool {
+    let p = plugin_of(plugin);
+    #[cfg(windows)]
+    if !p.gui_child.is_null() {
+        windows_sys::Win32::UI::WindowsAndMessaging::MoveWindow(
+            p.gui_child,
+            0,
+            0,
+            w as i32,
+            h as i32,
+            1,
+        );
+    }
+    let _ = (p, w, h);
+    true
+}
+
+unsafe extern "C" fn gui_set_parent(
+    plugin: *const clap_plugin,
+    window: *const clap_window,
+) -> bool {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::UI::WindowsAndMessaging::*;
+        let p = plugin_of(plugin);
+        let text: Vec<u16> = "Peel test gain".encode_utf16().chain([0]).collect();
+        let class: Vec<u16> = "STATIC".encode_utf16().chain([0]).collect();
+        p.gui_child = CreateWindowExW(
+            0,
+            class.as_ptr(),
+            text.as_ptr(),
+            WS_CHILD | WS_VISIBLE | 1, // SS_CENTER
+            0,
+            0,
+            GUI_SIZE.0 as i32,
+            GUI_SIZE.1 as i32,
+            (*window).specific.win32,
+            null_mut(),
+            null_mut(),
+            null(),
+        );
+        if p.gui_child.is_null() {
+            return false;
+        }
+        let get = (*p.host).get_extension.expect("get_extension");
+        let gui = get(p.host, CLAP_EXT_GUI.as_ptr()).cast::<clap_host_gui>();
+        if let Some(resize) = gui.as_ref().and_then(|g| g.request_resize) {
+            resize(p.host, GUI_REQUESTED_SIZE.0, GUI_REQUESTED_SIZE.1);
+        }
+        true
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (plugin, window);
+        false
+    }
+}
+
+unsafe extern "C" fn gui_show(plugin: *const clap_plugin) -> bool {
+    #[cfg(windows)]
+    windows_sys::Win32::UI::WindowsAndMessaging::ShowWindow(plugin_of(plugin).gui_child, 5);
+    let _ = plugin;
+    true
+}
+
+unsafe extern "C" fn gui_hide(plugin: *const clap_plugin) -> bool {
+    #[cfg(windows)]
+    windows_sys::Win32::UI::WindowsAndMessaging::ShowWindow(plugin_of(plugin).gui_child, 0);
+    let _ = plugin;
+    true
+}
+
 static GUI: clap_plugin_gui = clap_plugin_gui {
     is_api_supported: Some(gui_is_api_supported),
     get_preferred_api: None,
-    create: None,
-    destroy: None,
-    set_scale: None,
-    get_size: None,
-    can_resize: None,
+    create: Some(gui_create),
+    destroy: Some(gui_destroy),
+    set_scale: Some(gui_set_scale),
+    get_size: Some(gui_get_size),
+    can_resize: Some(gui_can_resize),
     get_resize_hints: None,
-    adjust_size: None,
-    set_size: None,
-    set_parent: None,
+    adjust_size: Some(gui_adjust_size),
+    set_size: Some(gui_set_size),
+    set_parent: Some(gui_set_parent),
     set_transient: None,
     suggest_title: None,
-    show: None,
-    hide: None,
+    show: Some(gui_show),
+    hide: Some(gui_hide),
 };
 
 unsafe extern "C" fn render_realtime_only(_plugin: *const clap_plugin) -> bool {
@@ -930,6 +1050,7 @@ unsafe extern "C" fn factory_create(
         requests: AtomicU8::new(0),
         bad_thread: false,
         voices: [IDLE_VOICE; VOICE_COUNT],
+        gui_child: null_mut(),
     }));
     (*plugin).clap.plugin_data = plugin.cast();
     &(*plugin).clap

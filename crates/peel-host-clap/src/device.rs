@@ -300,7 +300,7 @@ impl ClapDevice {
         &self.info
     }
 
-    /// The plugin exposes `clap.gui`. Embedding it is not implemented yet.
+    /// The plugin exposes `clap.gui`; open it through [`ClapHandle::open_editor`].
     pub fn has_gui(&self) -> bool {
         self.shared.has_gui()
     }

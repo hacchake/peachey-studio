@@ -1,7 +1,7 @@
 //! Instrument editor: a large sheet with the instrument's parameters, a
 //! playable piano (mouse and computer keyboard) and the MIDI controls that
-//! reach it. Plugin instruments get the same parameter panel; a VST3
-//! plugin's own window opens separately from the panel's button.
+//! reach it. Plugin instruments get the same parameter panel; a plugin's
+//! own window (CLAP or VST3) opens separately from the panel's button.
 //!
 //! Notes never hang: mouse notes end when the button comes up, the pointer
 //! leaves the window, the editor closes, the target changes or the window

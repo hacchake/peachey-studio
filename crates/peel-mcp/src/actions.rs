@@ -75,7 +75,7 @@ pub enum Action {
     },
     /// Rescan installed CLAP and VST3 plugins in the background. Poll status for plugins_scanning.
     RescanPlugins {},
-    /// Open (default) or close a plugin instrument's or effect's own window. VST3 plugins on Windows; the window appears on the desktop next to the studio.
+    /// Open (default) or close a plugin instrument's or effect's own window (CLAP or VST3, on Windows). The window appears on the desktop next to the studio.
     PluginWindow { device: String, open: Option<bool> },
     /// Place a linked pattern clip in an arrangement lane. A length longer than the pattern repeats it.
     PlacePattern {

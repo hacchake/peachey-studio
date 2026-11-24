@@ -74,7 +74,8 @@
 //!
 //! # Not covered yet
 //!
-//! Plugin GUIs (only [`ClapPluginInfo::has_gui`] is reported), parameter
+//! Plugin GUIs outside Windows (on Windows, [`ClapHandle::open_editor`] opens
+//! the plugin's window embedded in a host window), parameter
 //! modulation, note expressions, MPE/MIDI 2.0 dialects, auxiliary and
 //! multi-output routing, presets, remote controls, and the thread pool and
 //! timer extensions.
@@ -87,6 +88,7 @@ mod descriptor;
 mod device;
 mod error;
 mod events;
+mod gui;
 mod handle;
 mod host;
 mod info;

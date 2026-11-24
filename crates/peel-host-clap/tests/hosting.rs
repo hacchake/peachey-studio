@@ -716,3 +716,41 @@ fn many_devices_share_one_loaded_library() {
     let (l, _) = run_effect(&mut dev, &[], &[0.5; 4]);
     assert_eq!(l, [0.5; 4]);
 }
+
+#[test]
+fn the_plugin_window_opens_resizes_on_request_and_closes() {
+    let dev = load(GAIN);
+    let handle = dev.handle();
+    if !cfg!(windows) {
+        assert!(
+            !handle.has_editor(),
+            "plugin windows are Windows-only for now"
+        );
+        assert!(handle.open_editor().is_err());
+        return;
+    }
+    assert!(handle.has_editor());
+    assert!(!handle.editor_open());
+    handle.open_editor().expect("open the window");
+    assert!(handle.editor_open());
+    // The fixture asks to grow right after it is attached; idle applies it
+    // without disturbing anything else.
+    let _ = handle.idle();
+    assert!(handle.editor_open());
+    // Opening again only brings the window forward.
+    handle.open_editor().expect("raise");
+    handle.close_editor();
+    assert!(!handle.editor_open());
+    // It can be opened again after closing, and dropping the plugin with the
+    // window open tears both down cleanly.
+    handle.open_editor().expect("reopen");
+    drop(handle);
+    drop(dev);
+}
+
+#[test]
+fn plugins_without_a_win32_window_report_no_editor() {
+    let handle = load(SINE).handle();
+    assert!(!handle.has_editor());
+    assert!(handle.open_editor().is_err());
+}

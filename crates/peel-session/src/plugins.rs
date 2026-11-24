@@ -138,32 +138,32 @@ impl PluginHandle {
         }
     }
 
-    /// Whether the plugin offers its own window. CLAP plugin windows are
-    /// not hosted yet.
+    /// Whether the plugin offers its own window (Windows only for now).
     pub fn has_editor(&self) -> bool {
         match self {
-            PluginHandle::Clap(_) => false,
+            PluginHandle::Clap(h) => h.has_editor(),
             PluginHandle::Vst3(h) => h.has_editor(),
         }
     }
 
     pub fn editor_open(&self) -> bool {
         match self {
-            PluginHandle::Clap(_) => false,
+            PluginHandle::Clap(h) => h.editor_open(),
             PluginHandle::Vst3(h) => h.editor_open(),
         }
     }
 
     pub fn open_editor(&self) -> Result<(), String> {
         match self {
-            PluginHandle::Clap(_) => Err("CLAP plugin windows are not supported yet".into()),
+            PluginHandle::Clap(h) => h.open_editor(),
             PluginHandle::Vst3(h) => h.open_editor(),
         }
     }
 
     pub fn close_editor(&self) {
-        if let PluginHandle::Vst3(h) = self {
-            h.close_editor();
+        match self {
+            PluginHandle::Clap(h) => h.close_editor(),
+            PluginHandle::Vst3(h) => h.close_editor(),
         }
     }
 }

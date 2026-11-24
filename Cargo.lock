@@ -2846,6 +2846,7 @@ name = "peel-clap-test-plugin"
 version = "0.1.0"
 dependencies = [
  "clap-sys",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2937,6 +2938,7 @@ dependencies = [
  "libloading 0.8.9",
  "log",
  "peel-dsp",
+ "peel-plugin-window",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -2949,12 +2951,12 @@ dependencies = [
  "libloading 0.8.9",
  "log",
  "peel-dsp",
+ "peel-plugin-window",
  "rtrb",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
  "vst3",
- "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3011,6 +3013,13 @@ version = "0.1.0"
 dependencies = [
  "log",
  "midir",
+]
+
+[[package]]
+name = "peel-plugin-window"
+version = "0.1.0"
+dependencies = [
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -7,9 +7,10 @@
 //! run.
 
 use std::ffi::{CStr, c_char, c_void};
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 use clap_sys::ext::audio_ports::{CLAP_EXT_AUDIO_PORTS, clap_host_audio_ports};
+use clap_sys::ext::gui::{CLAP_EXT_GUI, clap_host_gui};
 use clap_sys::ext::latency::{CLAP_EXT_LATENCY, clap_host_latency};
 use clap_sys::ext::log::{
     CLAP_EXT_LOG, CLAP_LOG_DEBUG, CLAP_LOG_ERROR, CLAP_LOG_FATAL, CLAP_LOG_HOST_MISBEHAVING,
@@ -46,7 +47,17 @@ pub(crate) const F_PARAMS_RESCAN: u32 = 1 << 7;
 /// Audio or note ports changed; the plugin must be reloaded to use them.
 pub(crate) const F_PORTS_RESCAN: u32 = 1 << 8;
 
-/// Flags `idle()` consumes. `F_RESTART` is left set on purpose.
+/// The plugin window asked for a new size (`gui_size`).
+pub(crate) const F_GUI_RESIZE: u32 = 1 << 9;
+/// The plugin asked the host to show its window.
+pub(crate) const F_GUI_SHOW: u32 = 1 << 10;
+/// The plugin asked the host to hide its window.
+pub(crate) const F_GUI_HIDE: u32 = 1 << 11;
+/// The plugin's window was closed or destroyed by the plugin.
+pub(crate) const F_GUI_CLOSED: u32 = 1 << 12;
+
+/// Flags `idle()` consumes. `F_RESTART` is left set on purpose. The
+/// `F_GUI_*` flags are consumed by the plugin window code instead.
 pub(crate) const MAIN_THREAD_FLAGS: u32 =
     F_CALLBACK | F_LATENCY | F_TAIL | F_STATE_DIRTY | F_PARAMS_RESCAN | F_PORTS_RESCAN;
 
@@ -61,6 +72,8 @@ pub(crate) struct HostShared {
     pub(crate) audio_thread_logs: AtomicU32,
     /// Prefix for log lines: the plugin's name.
     pub(crate) label: String,
+    /// Size the plugin window asked for: width in the high 32 bits.
+    pub(crate) gui_size: AtomicU64,
 }
 
 /// A `clap_host` together with the state its callbacks use.
@@ -94,6 +107,7 @@ impl HostBox {
                 params_rescan: AtomicU32::new(0),
                 audio_thread_logs: AtomicU32::new(0),
                 label: label.to_string(),
+                gui_size: AtomicU64::new(0),
             },
         });
         // The box never moves its contents, so this self-reference is stable.
@@ -282,6 +296,44 @@ extern "C" fn note_ports_rescan(host: *const clap_host, _flags: u32) {
     }
 }
 
+static GUI: clap_host_gui = clap_host_gui {
+    resize_hints_changed: Some(gui_resize_hints_changed),
+    request_resize: Some(gui_request_resize),
+    request_show: Some(gui_request_show),
+    request_hide: Some(gui_request_hide),
+    closed: Some(gui_closed),
+};
+
+extern "C" fn gui_resize_hints_changed(_host: *const clap_host) {}
+
+extern "C" fn gui_request_resize(host: *const clap_host, width: u32, height: u32) -> bool {
+    // Thread-safe in CLAP: record it, the window code applies it on the main
+    // thread.
+    match shared(host) {
+        Some(s) => {
+            s.gui_size
+                .store(((width as u64) << 32) | height as u64, Ordering::Release);
+            s.raise(F_GUI_RESIZE);
+            true
+        }
+        None => false,
+    }
+}
+
+extern "C" fn gui_request_show(host: *const clap_host) -> bool {
+    shared(host).map(|s| s.raise(F_GUI_SHOW)).is_some()
+}
+
+extern "C" fn gui_request_hide(host: *const clap_host) -> bool {
+    shared(host).map(|s| s.raise(F_GUI_HIDE)).is_some()
+}
+
+extern "C" fn gui_closed(host: *const clap_host, _was_destroyed: bool) {
+    if let Some(s) = shared(host) {
+        s.raise(F_GUI_CLOSED);
+    }
+}
+
 extern "C" fn get_extension(_host: *const clap_host, id: *const c_char) -> *const c_void {
     if id.is_null() {
         return std::ptr::null();
@@ -304,6 +356,8 @@ extern "C" fn get_extension(_host: *const clap_host, id: *const c_char) -> *cons
         (&AUDIO_PORTS as *const clap_host_audio_ports).cast()
     } else if id == CLAP_EXT_NOTE_PORTS {
         (&NOTE_PORTS as *const clap_host_note_ports).cast()
+    } else if id == CLAP_EXT_GUI {
+        (&GUI as *const clap_host_gui).cast()
     } else {
         std::ptr::null()
     }
@@ -377,6 +431,7 @@ mod tests {
             CLAP_EXT_STATE,
             CLAP_EXT_AUDIO_PORTS,
             CLAP_EXT_NOTE_PORTS,
+            CLAP_EXT_GUI,
         ] {
             assert!(!get_extension(p, id.as_ptr()).is_null(), "{id:?}");
         }

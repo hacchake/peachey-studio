@@ -12,6 +12,7 @@ rust-version.workspace = true
 peel-dsp.workspace = true
 clap-sys = "0.5"
 libloading = "0.8"
+peel-plugin-window = { path = "../peel-plugin-window" }
 log.workspace = true
 thiserror.workspace = true
 serde.workspace = true

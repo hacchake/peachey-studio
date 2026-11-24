@@ -84,7 +84,30 @@ impl ClapHandle {
     /// re-creates the plugin: when the plugin wants a restart the report says
     /// so and the application decides when to call `ClapDevice::prepare`.
     pub fn idle(&self) -> IdleReport {
-        self.shared.idle()
+        let report = self.shared.idle();
+        crate::gui::idle(&self.shared);
+        report
+    }
+
+    /// Whether the plugin can show its own window here (Windows, embedded
+    /// win32 window).
+    pub fn has_editor(&self) -> bool {
+        crate::gui::available(&self.shared)
+    }
+
+    /// Whether the plugin's window is showing.
+    pub fn editor_open(&self) -> bool {
+        crate::gui::is_open(&self.shared)
+    }
+
+    /// Opens the plugin's own window, or brings it forward. Main thread.
+    pub fn open_editor(&self) -> Result<(), String> {
+        crate::gui::open(&self.shared, &self.info.name)
+    }
+
+    /// Closes the plugin's window. Main thread.
+    pub fn close_editor(&self) {
+        crate::gui::close(&self.shared);
     }
 
     /// The plugin's complete state as an opaque blob. The host stores it in

@@ -93,14 +93,14 @@ impl RawParam {
 }
 
 #[derive(Clone, Copy)]
-struct Extensions {
+pub(crate) struct Extensions {
     params: *const clap_plugin_params,
     state: *const clap_plugin_state,
     latency: *const clap_plugin_latency,
     tail: *const clap_plugin_tail,
     audio_ports: *const clap_plugin_audio_ports,
     note_ports: *const clap_plugin_note_ports,
-    gui: *const clap_plugin_gui,
+    pub(crate) gui: *const clap_plugin_gui,
     render: *const clap_plugin_render,
 }
 
@@ -117,7 +117,7 @@ impl Extensions {
     };
 }
 
-struct MainState {
+pub(crate) struct MainState {
     active: bool,
 }
 
@@ -147,8 +147,8 @@ pub struct IdleReport {
 
 /// An initialised plugin instance plus its host.
 pub(crate) struct PluginShared {
-    plugin: *const clap_plugin,
-    exts: Extensions,
+    pub(crate) plugin: *const clap_plugin,
+    pub(crate) exts: Extensions,
     pub(crate) plugin_id: String,
     pub(crate) audio_in: Vec<PortInfo>,
     pub(crate) audio_out: Vec<PortInfo>,
@@ -161,6 +161,8 @@ pub(crate) struct PluginShared {
     /// current by `set_param` and by the plugin's own output events.
     values: Box<[AtomicU32]>,
     main: Mutex<MainState>,
+    /// The plugin's own window, when open (main thread only).
+    pub(crate) editor: Mutex<Option<crate::gui::ClapEditor>>,
     latency: AtomicU32,
     tail: AtomicU32,
     sample_rate: AtomicU32,
@@ -219,6 +221,7 @@ impl PluginShared {
             table: ParamTable::new(Vec::new()),
             values: Box::new([]),
             main: Mutex::new(MainState { active: false }),
+            editor: Mutex::new(None),
             latency: AtomicU32::new(0),
             tail: AtomicU32::new(TAIL_UNBOUNDED),
             sample_rate: AtomicU32::new(0),
@@ -405,8 +408,18 @@ impl PluginShared {
         self.exposed = exposed;
     }
 
-    fn lock_main(&self) -> MutexGuard<'_, MainState> {
+    pub(crate) fn lock_main(&self) -> MutexGuard<'_, MainState> {
         self.main.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// Like [`lock_main`](Self::lock_main), but gives up when the lock is
+    /// held (window procedures must not wait on it).
+    pub(crate) fn try_lock_main(&self) -> Result<MutexGuard<'_, MainState>, ()> {
+        match self.main.try_lock() {
+            Ok(g) => Ok(g),
+            Err(std::sync::TryLockError::Poisoned(p)) => Ok(p.into_inner()),
+            Err(std::sync::TryLockError::WouldBlock) => Err(()),
+        }
     }
 
     // ---- extension presence --------------------------------------------
@@ -733,6 +746,15 @@ impl PluginShared {
 impl Drop for PluginShared {
     fn drop(&mut self) {
         let _scope = RoleScope::main();
+        // The window must let go of the plugin before the plugin goes.
+        if let Some(editor) = self
+            .editor
+            .get_mut()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()
+        {
+            crate::gui::destroy_unlocked(self, editor);
+        }
         let active = self
             .main
             .get_mut()

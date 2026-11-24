@@ -612,7 +612,7 @@ pub(crate) fn device_panel(
     if desc.type_id == "peel.fx.eq" {
         eq_view(ui, &mut body, dev, desc, s);
     }
-    // VST3 プラグインは自分の画面を別ウィンドウで開ける。
+    // CLAP と VST3 のプラグインは、自分の画面を別ウィンドウで開ける。
     if peel_session::is_plugin_type(desc.type_id) && s.plugin_has_editor(dev.id) {
         let mut row = body.cut_top(28.0);
         let label = if s.plugin_editor_open(dev.id) {
