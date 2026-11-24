@@ -209,24 +209,45 @@ pub fn scan_file_isolated(
             }
         }
     };
-    if !status.success() {
-        return Err(format!(
-            "{} の走査中にプラグインが落ちました（{status}）",
-            file.display()
-        ));
-    }
     let output = reader
         .join()
         .map_err(|_| "読み取りスレッドが落ちました".to_string())?;
-    let text = String::from_utf8_lossy(&output);
-    let json = text
+    parse_worker_output(file, &String::from_utf8_lossy(&output), status.success()).map_err(|e| {
+        e.unwrap_or_else(|| {
+            format!(
+                "{} の走査中にプラグインが落ちました（{status}）",
+                file.display()
+            )
+        })
+    })
+}
+
+/// 子プロセスの出力から結果を取り出す。
+///
+/// 結果の行を書いたあとに終了処理で落ちるプラグインがある（sfizz など）。
+/// 情報はもう取れているので、その場合も結果を使う。結果がなく子が落ちて
+/// いたら `Err(None)` を返し、呼び手が落ちたことを伝える。
+fn parse_worker_output(
+    file: &Path,
+    text: &str,
+    exited_cleanly: bool,
+) -> Result<Vec<Vst3PluginInfo>, Option<String>> {
+    let Some(json) = text
         .lines()
         .rev()
         .find_map(|l| l.strip_prefix(RESULT_PREFIX))
-        .ok_or("走査の結果が出力されませんでした")?;
-    match serde_json::from_str::<WorkerMessage>(json).map_err(|e| e.to_string())? {
+    else {
+        return Err(exited_cleanly.then(|| "走査の結果が出力されませんでした".to_string()));
+    };
+    if !exited_cleanly {
+        log::warn!(
+            "VST3 scan: {} は結果を返したあと終了時に落ちました（結果は使います）",
+            file.display()
+        );
+    }
+    match serde_json::from_str::<WorkerMessage>(json).map_err(|e| Some(e.to_string()))? {
         WorkerMessage::Plugins(p) => Ok(p),
-        WorkerMessage::Error(e) => Err(e),
+        WorkerMessage::Error(e) => Err(Some(e)),
     }
 }
 
@@ -246,4 +267,43 @@ pub fn scan_isolated(scanner: &Path, dirs: &[PathBuf], timeout: Duration) -> Sca
         }
     }
     report
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn line(message: &WorkerMessage) -> String {
+        format!(
+            "noise\n{RESULT_PREFIX}{}\n",
+            serde_json::to_string(message).unwrap()
+        )
+    }
+
+    #[test]
+    fn results_written_before_a_crash_at_exit_are_kept() {
+        let text = line(&WorkerMessage::Plugins(Vec::new()));
+        let file = Path::new("x.vst3");
+        assert!(parse_worker_output(file, &text, true).is_ok());
+        assert!(parse_worker_output(file, &text, false).is_ok());
+    }
+
+    #[test]
+    fn a_crash_without_results_is_reported_as_a_crash() {
+        let file = Path::new("x.vst3");
+        assert_eq!(
+            parse_worker_output(file, "noise\n", false).unwrap_err(),
+            None
+        );
+        assert!(
+            parse_worker_output(file, "noise\n", true)
+                .unwrap_err()
+                .is_some()
+        );
+        let text = line(&WorkerMessage::Error("bad".into()));
+        assert_eq!(
+            parse_worker_output(file, &text, false).unwrap_err(),
+            Some("bad".into())
+        );
+    }
 }
