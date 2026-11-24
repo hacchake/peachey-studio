@@ -386,6 +386,8 @@ pub enum AutomationTarget {
     TrackGain(TrackIndex),
     /// A mixer track's pan (-1..=1).
     TrackPan(TrackIndex),
+    /// A MIDI control change sent to a device as events (value 0..=1).
+    Controller { slot: Slot, cc: u8 },
 }
 
 /// Value the engine has not applied yet (forces the first application).

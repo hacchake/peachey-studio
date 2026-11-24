@@ -578,3 +578,84 @@ fn param_events_take_effect_at_their_sample_and_not_before() {
         );
     }
 }
+
+fn pedal(at: usize, down: bool) -> Timed {
+    (
+        at,
+        EventKind::Controller {
+            cc: 64,
+            value: if down { 1.0 } else { 0.0 },
+        },
+    )
+}
+
+/// Peak level of `buf` over `[from, to)`.
+fn level(buf: &[f32], from: usize, to: usize) -> f32 {
+    peak(&buf[from..to])
+}
+
+#[test]
+fn the_sustain_pedal_holds_releases_until_it_lifts() {
+    // A sustaining keyboard: without the pedal the note dies soon after release.
+    let t = "peel.synth.poly";
+    let sr = SR as usize;
+    let dry = render(
+        fresh(t).as_mut(),
+        &[note_on(0, 60, 0.9, 1), note_off(sr / 4, 60, 1)],
+        sr * 2,
+        256,
+    )
+    .0;
+    let held = render(
+        fresh(t).as_mut(),
+        &[
+            pedal(10, true),
+            note_on(100, 60, 0.9, 1),
+            note_off(sr / 4, 60, 1),
+            pedal(sr, false),
+        ],
+        sr * 2,
+        256,
+    )
+    .0;
+    let window = (sr * 3 / 4, sr * 9 / 10);
+    assert!(
+        level(&dry, window.0, window.1) < 0.01,
+        "released note has faded: {}",
+        level(&dry, window.0, window.1)
+    );
+    assert!(
+        level(&held, window.0, window.1) > 0.05,
+        "the pedal keeps it sounding: {}",
+        level(&held, window.0, window.1)
+    );
+    assert!(
+        level(&held, sr * 7 / 4, sr * 2) < 0.01,
+        "lifting the pedal releases it: {}",
+        level(&held, sr * 7 / 4, sr * 2)
+    );
+}
+
+#[test]
+fn other_controllers_and_panic_leave_no_note_held() {
+    let t = "peel.synth.poly";
+    let sr = SR as usize;
+    let out = render(
+        fresh(t).as_mut(),
+        &[
+            (5, EventKind::Controller { cc: 1, value: 0.7 }),
+            pedal(10, true),
+            note_on(100, 60, 0.9, 1),
+            note_off(sr / 4, 60, 1),
+            (sr / 2, EventKind::AllNotesOff),
+        ],
+        sr * 2,
+        256,
+    )
+    .0;
+    assert!(
+        level(&out, sr * 7 / 4, sr * 2) < 0.01,
+        "all notes off clears the pedal's held releases"
+    );
+    assert!(all_finite(&out));
+}

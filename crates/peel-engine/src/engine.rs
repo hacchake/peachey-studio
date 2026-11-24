@@ -44,6 +44,9 @@ use crate::live::{LiveInput, LiveShared, LiveState, LiveTiming, RecordedReceiver
 use crate::mixer::{Mixer, mix_ramped, peak, sanitize_peak, scale_ramped, slew, target_gains};
 use crate::monitor::{Metronome, Preview};
 use crate::plan::{AutomationTarget, RenderPlan, SeqKind};
+
+/// MIDI controller number of the sustain pedal.
+const SUSTAIN_CC: u8 = 64;
 use crate::retire::Retirer;
 use crate::telemetry::Telemetry;
 use crate::{EngineConfig, LIVE_VOICE_BASE, MAX_TRACKS};
@@ -1117,6 +1120,20 @@ impl Engine {
     /// Releases every sequence-driven note `offset` frames into the block.
     /// Live notes (keyboard, MIDI in) are left alone.
     fn release_sequence_notes(&mut self, offset: u32) {
+        // A pedal the arrangement holds down is lifted too, and controller
+        // lanes send their value again when playback resumes.
+        for lane in self.plan.automation.iter_mut() {
+            if let AutomationTarget::Controller { slot, cc } = lane.target {
+                if cc == SUSTAIN_CC && lane.last >= 0.5 && lane.last.is_finite() {
+                    self.stage.push_control(
+                        slot as usize,
+                        offset,
+                        EventKind::Controller { cc, value: 0.0 },
+                    );
+                }
+                lane.last = crate::plan::AUTOMATION_UNSET;
+            }
+        }
         let mut i = 0;
         while i < self.active.len() {
             if self.active.get(i).live {
@@ -1168,7 +1185,7 @@ impl Engine {
         self.audio.begin_chunk();
         if was_playing {
             self.schedule(block_start, block_end);
-            self.apply_automation(beat_start);
+            self.apply_automation(beat_start, block_start, block_end);
         }
         let overflows = self.stage.finish_chunk(&mut self.active);
         if overflows > 0 {
@@ -1182,10 +1199,53 @@ impl Engine {
     }
 
     /// Applies every automation lane active at `beat`. Devices and the mixer
-    /// smooth the change, so once per chunk is enough.
-    fn apply_automation(&mut self, beat: f64) {
+    /// smooth the change, so once per chunk is enough. MIDI controller lanes
+    /// are events instead: a pedal must go down and up on its exact sample,
+    /// so their breakpoints inside the block are delivered at their offsets.
+    fn apply_automation(&mut self, beat: f64, block_start: i64, block_end: i64) {
         let plan = &mut *self.plan;
+        let sr = self.sr64;
+        let origin = self.transport.origin;
+        // After a loop wrap inside this block the origin no longer matches
+        // `beat`; controller breakpoints then wait for the next block.
+        let aligned = (origin.beat_at(&plan.tempo, block_start, sr) - beat).abs() < 1e-6;
         for lane in plan.automation.iter_mut() {
+            if let AutomationTarget::Controller { slot, cc } = lane.target {
+                let mut send = |lane: &mut crate::plan::AutomationLane, offset: u32, v: f32| {
+                    if v.is_finite() && (v - lane.last).abs() > f32::EPSILON {
+                        lane.last = v;
+                        self.stage.push_control(
+                            slot as usize,
+                            offset,
+                            EventKind::Controller {
+                                cc,
+                                value: v.clamp(0.0, 1.0),
+                            },
+                        );
+                    }
+                };
+                if let Some(v) = lane.value_at(beat) {
+                    send(lane, 0, v);
+                }
+                if aligned {
+                    let frames = (block_end - block_start).max(0) as u32;
+                    for i in 0..lane.points.len() {
+                        let at = lane.points[i].0;
+                        if at <= beat {
+                            continue;
+                        }
+                        let sample = origin.sample_of(&plan.tempo, at, sr);
+                        if sample >= block_end {
+                            break;
+                        }
+                        let offset = (sample - block_start).clamp(0, i64::from(frames) - 1) as u32;
+                        if let Some(v) = lane.value_at(at) {
+                            send(lane, offset, v);
+                        }
+                    }
+                }
+                continue;
+            }
             let Some(v) = lane.value_at(beat) else {
                 continue;
             };
@@ -1209,6 +1269,7 @@ impl Engine {
                         tr.pan = v.clamp(-1.0, 1.0);
                     }
                 }
+                AutomationTarget::Controller { .. } => {}
             }
         }
     }

@@ -97,3 +97,67 @@ fn many_lanes_render_cleanly() {
     let (left, _) = render_blocks(&mut off, BEAT * 2, 256);
     assert!(left.iter().all(|x| x.is_finite()));
 }
+
+/// Controller events the logging gate received, as (absolute frame, cc, value).
+fn controllers(log: &Log) -> Vec<(u64, u8, f32)> {
+    log.lock()
+        .unwrap()
+        .iter()
+        .filter_map(|e| match e.kind {
+            peel_dsp::EventKind::Controller { cc, value } => Some((e.abs(), cc, value)),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn controller_lanes_send_midi_cc_on_the_exact_sample() {
+    let mut p = plan(TempoMap::constant(120.0), &[], 1, None, 16.0);
+    // Pedal up until beat 1.5, down until beat 3, then up again.
+    p.automation = vec![lane(
+        AutomationTarget::Controller { slot: 0, cc: 64 },
+        vec![(0.0, 0.0), (1.5, 0.0), (1.5, 1.0), (3.0, 1.0), (3.0, 0.0)],
+        0.0,
+        8.0,
+    )];
+    let log: Log = Default::default();
+    let mut off = rig(p, Some(log.clone()));
+    off.send(EngineCommand::Play);
+    // A block size that does not divide the beat, so offsets matter.
+    render_blocks(&mut off, BEAT * 4, 250);
+    let got = controllers(&log);
+    assert_eq!(
+        got,
+        vec![
+            (0, 64, 0.0),
+            ((BEAT as f64 * 1.5) as u64, 64, 1.0),
+            (BEAT as u64 * 3, 64, 0.0),
+        ],
+        "one event per change, each on its own sample"
+    );
+}
+
+#[test]
+fn stopping_lifts_a_pedal_the_arrangement_holds_and_playing_sends_it_again() {
+    let mut p = plan(TempoMap::constant(120.0), &[], 1, None, 16.0);
+    p.automation = vec![lane(
+        AutomationTarget::Controller { slot: 0, cc: 64 },
+        vec![(0.0, 1.0)],
+        0.0,
+        8.0,
+    )];
+    let log: Log = Default::default();
+    let mut off = rig(p, Some(log.clone()));
+    off.send(EngineCommand::Play);
+    render_blocks(&mut off, BEAT, 256);
+    off.send(EngineCommand::Pause);
+    render_blocks(&mut off, 512, 256);
+    off.send(EngineCommand::Play);
+    render_blocks(&mut off, 512, 256);
+    let values: Vec<f32> = controllers(&log).iter().map(|c| c.2).collect();
+    assert_eq!(
+        values,
+        vec![1.0, 0.0, 1.0],
+        "down, lifted on stop, down again"
+    );
+}

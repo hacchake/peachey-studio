@@ -189,10 +189,11 @@ fn the_pedal_and_all_notes_off_reach_the_engine() {
     s.io.bridge.handle(&note_on(60, 100));
     s.io.bridge.handle(&note_off(60));
     wait_for(&mut s, "the piano to sound", |s| sounds(s, piano));
-    assert_eq!(s.engine.live_stats().events(), initial + 3);
+    // The pedal is two events: the host's hold and CC64 for the instrument.
+    assert_eq!(s.engine.live_stats().events(), initial + 4);
 
     s.io.bridge.handle(&MidiEvent::AllNotesOff { channel: 0 });
-    assert_eq!(s.engine.live_stats().events(), initial + 4);
+    assert_eq!(s.engine.live_stats().events(), initial + 5);
     let notes = s.take_recorded_midi();
     assert_eq!(notes.len(), 2);
     assert!(notes[1].sustain, "the release was recorded under the pedal");

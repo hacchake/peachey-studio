@@ -224,6 +224,9 @@ impl MidiBridge {
             }
             MidiEvent::Sustain { down, .. } => {
                 live.sustain(down);
+                // The host holds releases for every instrument; plugins also
+                // get the pedal itself (resonance, pedal noise).
+                live.expression(controller_event(64, if down { 127 } else { 0 }));
             }
             MidiEvent::ControlChange {
                 controller: 64,
@@ -231,6 +234,7 @@ impl MidiBridge {
                 ..
             } => {
                 live.sustain(value >= 64);
+                live.expression(controller_event(64, value));
             }
             MidiEvent::AllNotesOff { .. } | MidiEvent::AllSoundOff { .. } => {
                 live.all_notes_off_target();
@@ -269,8 +273,18 @@ impl MidiBridge {
                     },
                 );
             }
+            // Other controllers went to the mapping mailbox above; unmapped
+            // ones reach the instrument from `poll_midi_controls`.
             _ => {}
         }
+    }
+}
+
+/// A MIDI control change (value 0..=127) as a device event.
+pub(crate) fn controller_event(cc: u8, value: u8) -> peel_dsp::EventKind {
+    peel_dsp::EventKind::Controller {
+        cc: cc.min(127),
+        value: f32::from(value.min(127)) / 127.0,
     }
 }
 

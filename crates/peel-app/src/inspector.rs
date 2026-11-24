@@ -630,6 +630,31 @@ pub(crate) fn device_panel(
         }
         body.cut_top(10.0);
     }
+    // 楽器には、サステインペダル（CC64）のオートメーションを作れる。
+    let is_instrument = s.project().channels.iter().any(|c| c.device.id == dev.id);
+    if is_instrument {
+        let mut row = body.cut_top(28.0);
+        let w = 180.0_f32.min(row.w);
+        if ui
+            .button(
+                W::new(("automate-sustain", dev.id)),
+                row.cut_left(w),
+                "Automate sustain pedal",
+            )
+            .clicked
+        {
+            crate::playlist::create_automation(
+                s,
+                ws,
+                peel_document::AutomationTarget::MidiCc {
+                    device: dev.id,
+                    cc: 64,
+                },
+                0.0,
+            );
+        }
+        body.cut_top(10.0);
+    }
 
     let mut content_h = panel_height(desc, body.w);
     if !presets.is_empty() {

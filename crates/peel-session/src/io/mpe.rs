@@ -255,6 +255,11 @@ impl MpeState {
     }
     fn pedal(&mut self, live: &LiveInput, down: bool) {
         live.sustain(down);
+        // Plugins also get the pedal itself (see the non-MPE path).
+        live.expression(peel_dsp::EventKind::Controller {
+            cc: 64,
+            value: if down { 1.0 } else { 0.0 },
+        });
         self.pedal = down;
         if !down {
             for ch in 0..16u8 {

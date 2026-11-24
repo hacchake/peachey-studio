@@ -200,6 +200,10 @@ pub struct ClapDevice {
     sleeping: bool,
     /// Run `reset` after the current block (a panic was requested).
     reset_after_block: bool,
+    /// The first note port takes MIDI, so control changes can be sent.
+    midi_cc: bool,
+    /// The sustain pedal (CC64) was last sent down.
+    pedal: bool,
 }
 
 // SAFETY: the raw pointers inside (audio descriptors, event list) point into
@@ -258,6 +262,9 @@ impl ClapDevice {
         let dialect = pick_dialect(&shared.note_in);
         let audio = build_audio(&shared, kind, max_block);
         let params = shared.table.len();
+        let midi_cc = shared.note_in.first().is_some_and(|port| {
+            port.supported_dialects & (CLAP_NOTE_DIALECT_MIDI | CLAP_NOTE_DIALECT_MIDI_MPE) != 0
+        });
         let mut scoped = crate::scoped::Scoped::default();
         scoped.midi_enabled = dialect == Dialect::Midi
             && shared
@@ -284,6 +291,8 @@ impl ClapDevice {
             started: false,
             sleeping: false,
             reset_after_block: false,
+            midi_cc,
+            pedal: false,
             shared,
         })
     }
@@ -535,11 +544,14 @@ impl ClapDevice {
             | EventKind::ChannelPressure { .. }
             | EventKind::PolyPressure { .. }
             | EventKind::ResetExpression => self.push_expression(time, e.kind),
+            EventKind::Controller { cc, value } => self.push_controller(time, cc, value),
             EventKind::AllNotesOff => {
+                self.lift_pedal(time);
                 self.release_all(time, false);
                 true
             }
             EventKind::AllSoundOff => {
+                self.lift_pedal(time);
                 self.expression.clear();
                 self.pending_expression = PendingExpression::default();
                 self.release_all(time, true);
@@ -552,6 +564,32 @@ impl ClapDevice {
                 self.scoped.note_off(note_id(voice));
             }
             self.shared.dropped_events.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Sends a MIDI control change when the plugin takes MIDI. Plugins that
+    /// only take CLAP note events have no way to receive one; the change is
+    /// then dropped quietly (it is not an overflow).
+    fn push_controller(&mut self, time: u32, cc: u8, value: f32) -> bool {
+        if !self.midi_cc || cc > 127 || !value.is_finite() {
+            return true;
+        }
+        let v = (value.clamp(0.0, 1.0) * 127.0).round() as u8;
+        let down = v >= 64;
+        // Lifting the pedal releases notes, so it may use the release reserve.
+        let lifting = cc == 64 && !down;
+        let ok = self.events.push_midi(time, 0, [0xB0, cc, v], lifting);
+        if ok && cc == 64 {
+            self.pedal = down;
+        }
+        ok
+    }
+
+    /// Lifts a pedal the plugin still thinks is down, so a panic or a stop
+    /// cannot leave notes ringing inside the plugin.
+    fn lift_pedal(&mut self, time: u32) {
+        if self.pedal && self.events.push_midi(time, 0, [0xB0, 64, 0], true) {
+            self.pedal = false;
         }
     }
 

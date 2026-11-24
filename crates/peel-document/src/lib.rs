@@ -123,6 +123,45 @@ mod tests {
     }
 
     #[test]
+    fn midi_cc_automation_round_trips_and_is_validated() {
+        let mut p = with_channel();
+        let device = p.channels[0].device.id;
+        let lane = p.arrangement().tracks[0].id;
+        let clip = |cc: u8| Clip {
+            id: Id::new(),
+            track: lane,
+            start: Time::ZERO,
+            length: Time::beats(4),
+            offset: Time::ZERO,
+            muted: false,
+            content: ClipContent::Automation {
+                target: AutomationTarget::MidiCc { device, cc },
+                points: vec![
+                    AutomationPoint::new(Time::ZERO, 0.0),
+                    AutomationPoint::new(Time::beats(2), 0.0),
+                    AutomationPoint::new(Time::beats(2), 1.0),
+                ],
+            },
+        };
+        p.arrangement_mut().clips.push(clip(64));
+        assert!(validate(&p).is_empty(), "{:?}", validate(&p));
+        let json = serde_json::to_value(&p.arrangement().clips[0].content).unwrap();
+        assert_eq!(json["target"]["kind"], "midi_cc");
+        assert_eq!(json["target"]["cc"], 64);
+        let back: ClipContent = serde_json::from_value(json).unwrap();
+        assert_eq!(back, p.arrangement().clips[0].content);
+
+        p.arrangement_mut().clips.push(clip(200));
+        assert!(
+            validate(&p)
+                .iter()
+                .any(|i| i.message.contains("controller number")),
+            "{:?}",
+            validate(&p)
+        );
+    }
+
+    #[test]
     fn empty_project_is_valid() {
         let p = Project::empty("Song");
         assert!(validate(&p).is_empty(), "{:?}", validate(&p));

@@ -60,11 +60,24 @@ pub(crate) trait Synth: Send + 'static {
     }
 }
 
+/// How many releases the sustain pedal can hold. Further releases while the
+/// pedal is down are played at once instead (never allocates on the audio
+/// thread).
+const MAX_SUSTAINED: usize = 256;
+
+/// MIDI controller number of the sustain pedal.
+const SUSTAIN_CC: u8 = 64;
+
 /// Adapts a [`Synth`] to the `Device` trait.
 pub(crate) struct Instrument<S: Synth> {
     desc: &'static DeviceDescriptor,
     values: Vec<f32>,
     synth: S,
+    /// The sustain pedal (CC64) is down.
+    pedal: bool,
+    /// Releases held by the pedal, in the order they were played:
+    /// (key, release velocity, voice).
+    sustained: Vec<(u8, f32, u32)>,
 }
 
 impl<S: Synth> Instrument<S> {
@@ -73,6 +86,8 @@ impl<S: Synth> Instrument<S> {
             desc,
             values: desc.params.iter().map(|p| p.default).collect(),
             synth,
+            pedal: false,
+            sustained: Vec::with_capacity(MAX_SUSTAINED),
         };
         // Usable even if the host never calls `prepare`.
         inst.prepare(48_000.0, 512);
@@ -106,6 +121,12 @@ impl<S: Synth> Instrument<S> {
                 };
                 // A new strike inherits channel pressure, not a previous
                 // strike's per-key aftertouch (including its smoothing tail).
+                // Striking a key the pedal holds ends the held note first,
+                // as on a piano, so voices do not pile up.
+                if let Some(i) = self.sustained.iter().position(|&(k, ..)| k == key) {
+                    let (k, v, id) = self.sustained.remove(i);
+                    self.release(k, v, id);
+                }
                 let ex = self.synth.expression();
                 ex.clear_key(key);
                 ex.claim(voice);
@@ -121,8 +142,16 @@ impl<S: Synth> Instrument<S> {
                 } else {
                     0.0
                 };
-                self.synth.expression().release(voice);
-                self.synth.note_off(key.min(127), vel, voice);
+                if self.pedal && self.sustained.len() < MAX_SUSTAINED {
+                    self.sustained.push((key, vel, voice));
+                } else {
+                    self.release(key, vel, voice);
+                }
+            }
+            EventKind::Controller { cc, value } => {
+                if cc == SUSTAIN_CC {
+                    self.set_pedal(value >= 0.5);
+                }
             }
             EventKind::Param { id, value } => self.apply(id, value),
             EventKind::PitchBend { semitones } => self.synth.expression().set_bend(semitones),
@@ -145,8 +174,14 @@ impl<S: Synth> Instrument<S> {
             // Live controllers return to centre; a sequenced note keeps the
             // curve it is playing.
             EventKind::ResetExpression => self.synth.expression().reset_shared(),
-            EventKind::AllNotesOff => self.synth.all_notes_off(),
+            EventKind::AllNotesOff => {
+                self.pedal = false;
+                self.sustained.clear();
+                self.synth.all_notes_off();
+            }
             EventKind::AllSoundOff => {
+                self.pedal = false;
+                self.sustained.clear();
                 self.synth.expression().reset();
                 self.synth.all_sound_off();
             }
@@ -155,6 +190,24 @@ impl<S: Synth> Instrument<S> {
 }
 
 impl<S: Synth> Instrument<S> {
+    fn release(&mut self, key: u8, velocity: f32, voice: u32) {
+        self.synth.expression().release(voice);
+        self.synth.note_off(key.min(127), velocity, voice);
+    }
+
+    /// Pedal down holds releases; pedal up plays every held release.
+    fn set_pedal(&mut self, down: bool) {
+        self.pedal = down;
+        if !down {
+            // Index loop: `release` needs `&mut self` while we read the list.
+            for i in 0..self.sustained.len() {
+                let (k, v, id) = self.sustained[i];
+                self.release(k, v, id);
+            }
+            self.sustained.clear();
+        }
+    }
+
     /// A note's snapshot may be planned right after its NoteOn at the same
     /// sample. Applying it first starts the note on its own pitch, pressure
     /// and timbre instead of gliding in from the shared state.
@@ -199,6 +252,8 @@ impl<S: Synth> Device for Instrument<S> {
     }
 
     fn reset(&mut self) {
+        self.pedal = false;
+        self.sustained.clear();
         self.synth.reset();
         self.synth.expression().reset();
     }

@@ -2518,6 +2518,28 @@ pub fn automation_label(s: &Session, target: &peel_document::AutomationTarget) -
                 None => (format!("Missing · {what}"), Color::hex(0x95A2B0)),
             }
         }
+        T::MidiCc { device, cc } => {
+            let what = midi_cc_name(*cc);
+            match p.channels.iter().find(|c| c.device.id == *device) {
+                Some(ch) => (format!("{} · {what}", ch.name), col(ch.color)),
+                None => (format!("Missing · {what}"), Color::hex(0x95A2B0)),
+            }
+        }
+    }
+}
+
+/// A short name for a MIDI controller number.
+pub fn midi_cc_name(cc: u8) -> String {
+    match cc {
+        1 => "Mod Wheel (CC1)".into(),
+        2 => "Breath (CC2)".into(),
+        7 => "Volume (CC7)".into(),
+        10 => "Pan (CC10)".into(),
+        11 => "Expression (CC11)".into(),
+        64 => "Sustain Pedal (CC64)".into(),
+        66 => "Sostenuto (CC66)".into(),
+        67 => "Soft Pedal (CC67)".into(),
+        _ => format!("MIDI CC{cc}"),
     }
 }
 

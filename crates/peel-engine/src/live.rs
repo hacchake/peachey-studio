@@ -507,6 +507,12 @@ impl LiveInput {
                         timbre: timbre.clamp(0.0, 1.0),
                     }
                 }
+                EventKind::Controller { cc, value } if cc < 128 && value.is_finite() => {
+                    EventKind::Controller {
+                        cc,
+                        value: value.clamp(0.0, 1.0),
+                    }
+                }
                 EventKind::ClearVoiceExpression { .. } | EventKind::ResetExpression => kind,
                 _ => return false,
             };

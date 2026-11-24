@@ -141,6 +141,21 @@ For example, after reading the project's current revision:
 }
 ```
 
+Automation clips (`content` with `"type":"automation"`) take a `target` of kind
+`param` (`device`, `param`), `track_gain` or `track_pan` (`track`), or
+`midi_cc` (`device`, `cc` 0–127) for a MIDI control change sent to a channel's
+instrument. Plugins receive `midi_cc` as MIDI; built-in instruments honour the
+sustain pedal (`cc` 64) and ignore other controllers. Value 1 is controller
+value 127. Put two points at the same position for an instant change, for
+example a pedal that goes down at beat 4:
+
+```json
+{"kind":"midi_cc","device":"DEVICE_ID","cc":64}
+```
+
+with points `[{"position":"0","value":0},{"position":"4","value":0},{"position":"4","value":1}]`.
+Stopping, seeking and looping lift a pedal the arrangement holds down.
+
 The entire candidate is decoded and validated before it replaces the
 current state. A failed patch, broken reference, routing cycle or invalid
 value leaves the project and undo history unchanged. Successful batches
@@ -214,6 +229,9 @@ A mapping for an exact MIDI channel overrides the same CC's omni mapping
 only on that channel. Removing the override restores the omni binding.
 Duplicate exact controller/channel bindings are rejected. CC64, CC120 and
 CC123 retain their sustain and panic roles.
+Controllers with no mapping go to the selected instrument as MIDI control
+changes, so a plugin's own mod wheel or expression handling works. The sustain
+pedal reaches plugins as CC64 as well as holding releases in the host.
 
 `peel_midi_learn` with a target waits for the next accepted controller; omit
 `target` to cancel. `peel_midi_controls` reads mappings, filter, Learn status and

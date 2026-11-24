@@ -96,6 +96,10 @@ pub enum EventKind {
     },
     /// Relinquish one voice's override and resume shared expression without retriggering.
     ClearVoiceExpression { voice: u32 },
+    /// MIDI control change: `cc` is the controller number (0..=127) and
+    /// `value` is 0..=1 (127 is 1.0). Hosted plugins receive it as MIDI
+    /// (CC64 is the sustain pedal); built-in devices ignore it.
+    Controller { cc: u8, value: f32 },
     /// Clear transient pitch and pressure without ending sequence voices.
     ResetExpression,
     /// Release every sounding voice normally (tails continue).

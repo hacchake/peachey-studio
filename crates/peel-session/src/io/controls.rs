@@ -411,6 +411,17 @@ impl Session {
                     .cloned()
                     .collect();
                 if mappings.is_empty() {
+                    // 割り当てのない CC は、選んでいる楽器にそのまま届ける
+                    // （プラグインのモジュレーションホイールなど）。
+                    let live = self
+                        .io
+                        .bridge
+                        .live
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    if let Some(live) = live.as_ref() {
+                        live.expression(super::controller_event(controller, (packed - 1) as u8));
+                    }
                     continue;
                 }
                 let now = Instant::now();

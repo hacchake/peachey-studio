@@ -677,6 +677,16 @@ fn automation_lane(
                 Box::new(|v| (v * 2.0 - 1.0).clamp(-1.0, 1.0)),
             )
         }
+        T::MidiCc { device, cc } => {
+            let slot = *ctx.slots.get(device)?;
+            (
+                E::Controller {
+                    slot,
+                    cc: (*cc).min(127),
+                },
+                Box::new(|v| v),
+            )
+        }
     };
     if points.is_empty() {
         return None;

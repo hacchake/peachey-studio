@@ -263,6 +263,12 @@ pub fn validate(p: &Project) -> Vec<Issue> {
                         }
                         crate::AutomationTarget::TrackGain { track }
                         | crate::AutomationTarget::TrackPan { track } => track_ids.contains(track),
+                        crate::AutomationTarget::MidiCc { device, cc } => {
+                            if *cc > 127 {
+                                issues.push(Issue::error("MIDI controller number out of range"));
+                            }
+                            p.channels.iter().any(|c| c.device.id == *device)
+                        }
                     };
                     if !target_ok {
                         // Kept with its envelope so it can be rebound.

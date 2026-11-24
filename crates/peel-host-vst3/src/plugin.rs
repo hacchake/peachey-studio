@@ -80,6 +80,8 @@ pub(crate) struct Plugin {
     pub(crate) shared: Arc<Shared>,
     pub(crate) pitch_bend: Option<ParamID>,
     pub(crate) aftertouch: Option<ParamID>,
+    /// MIDI CC 0..=127 を受けるパラメーター（プラグインが IMidiMapping で示したもの）。
+    pub(crate) midi_cc: [Option<ParamID>; 128],
     pub(crate) editor: Mutex<Option<crate::editor::Editor>>,
 }
 
@@ -167,9 +169,18 @@ impl Plugin {
         }
 
         let specs = controller.as_ref().map(read_params).unwrap_or_default();
-        let (pitch_bend, aftertouch) = controller
-            .as_ref()
-            .and_then(|c| c.cast::<IMidiMapping>())
+        let mapping = controller.as_ref().and_then(|c| c.cast::<IMidiMapping>());
+        let mut midi_cc = [None; 128];
+        if let Some(m) = &mapping {
+            for (cc, slot) in midi_cc.iter_mut().enumerate() {
+                let mut id = 0;
+                // SAFETY: メインスレッドからの呼び出し。
+                if ok(unsafe { m.getMidiControllerAssignment(0, 0, cc as i16, &mut id) }) {
+                    *slot = Some(id);
+                }
+            }
+        }
+        let (pitch_bend, aftertouch) = mapping
             .map(|m| unsafe {
                 let mut pb = 0;
                 let mut at = 0;
@@ -250,6 +261,7 @@ impl Plugin {
             _module: module,
             shared,
             pitch_bend,
+            midi_cc,
             aftertouch,
             editor: Mutex::new(None),
         });

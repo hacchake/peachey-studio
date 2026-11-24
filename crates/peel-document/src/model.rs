@@ -439,9 +439,25 @@ pub enum ClipContent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum AutomationTarget {
-    Param { device: Id, param: String },
-    TrackGain { track: Id },
-    TrackPan { track: Id },
+    Param {
+        device: Id,
+        param: String,
+    },
+    TrackGain {
+        track: Id,
+    },
+    TrackPan {
+        track: Id,
+    },
+    /// A MIDI control change sent to an instrument while the clip plays.
+    /// `value` 1.0 is controller value 127. Plugins receive it as MIDI;
+    /// built-in instruments honour the sustain pedal (`cc` 64) and ignore
+    /// other controllers. Hold a pedal with a step: two points at the same
+    /// position.
+    MidiCc {
+        device: Id,
+        cc: u8,
+    },
 }
 
 /// One breakpoint. `value` is normalized 0..=1 across the target's range;

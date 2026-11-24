@@ -50,6 +50,8 @@ struct Realtime {
     voices: Vec<Voice>,
     release_all: bool,
     bend_range: f32,
+    /// サステインペダル（CC64）を踏んだと最後に伝えた。
+    pedal: bool,
     position: i64,
     has_event_input: bool,
 }
@@ -95,6 +97,7 @@ impl Vst3Device {
                 voices: Vec::with_capacity(MAX_VOICES),
                 release_all: false,
                 bend_range: 2.0,
+                pedal: false,
                 position: 0,
                 has_event_input: false,
             }),
@@ -172,6 +175,12 @@ impl Vst3Device {
     }
 
     fn release_voices(&mut self, offset: i32) {
+        // 踏んだままのペダルも上げる（止めたあと音がプラグインの中で鳴り続けないように）。
+        if std::mem::take(&mut self.rt.pedal)
+            && let Some(id) = self.plugin.midi_cc[64]
+        {
+            unsafe { self.rt.changes.add(id, offset, 0.0) };
+        }
         let rt = &mut *self.rt;
         for v in rt.voices.drain(..) {
             unsafe { rt.events.push(Self::note_off_event(offset, v.key, v.id)) };
@@ -414,6 +423,17 @@ impl Device for Vst3Device {
                                 .changes
                                 .add(id, offset, value.clamp(0.0, 1.0) as f64)
                         };
+                    }
+                }
+                EventKind::Controller { cc, value } => {
+                    if let Some(&Some(id)) = self.plugin.midi_cc.get(usize::from(cc))
+                        && value.is_finite()
+                    {
+                        let v = value.clamp(0.0, 1.0);
+                        if cc == 64 {
+                            self.rt.pedal = v >= 0.5;
+                        }
+                        unsafe { self.rt.changes.add(id, offset, f64::from(v)) };
                     }
                 }
                 EventKind::AllNotesOff | EventKind::AllSoundOff => self.release_voices(offset),
