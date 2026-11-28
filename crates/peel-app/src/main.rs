@@ -83,6 +83,11 @@ fn main() {
         eprintln!("Choose either --mcp or --mcp-headless");
         std::process::exit(2);
     }
+    if mcp || headless {
+        // プラグインを読み込む前に、MCP の通信用に標準出力を取り分ける。
+        // プラグインが標準出力に書いたものは標準エラーへ流れ、通信文に混ざらない。
+        peel_mcp::isolate_stdout();
+    }
     if headless {
         if let Err(error) = peel_mcp::run_headless(open, false) {
             eprintln!("Peel MCP: {error}");

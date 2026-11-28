@@ -8,9 +8,11 @@ mod compose;
 mod control;
 mod expression_control;
 mod io_control;
+mod stdout_guard;
 
 pub use actions::{Action, decode};
 pub use control::Control;
+pub use stdout_guard::isolate_stdout;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
@@ -60,6 +62,7 @@ impl Bridge {
         let done = finished.clone();
         let waker = WakeSlot::default();
         let server_waker = waker.clone();
+        let protocol_out = stdout_guard::take_protocol_stdout();
         std::thread::Builder::new()
             .name("peel-mcp".into())
             .spawn(move || {
@@ -70,13 +73,21 @@ impl Bridge {
                         .build()
                         .map_err(|e| e.to_string())?;
                     runtime.block_on(async {
-                        let service = Server {
+                        let server = Server {
                             tx,
                             waker: server_waker,
-                        }
-                        .serve(rmcp::transport::stdio())
-                        .await
-                        .map_err(|e| e.to_string())?;
+                        };
+                        // プラグインの標準出力への書き込みが混ざらない、通信専用の出力。
+                        let service = match protocol_out {
+                            Some(out) => server
+                                .serve((tokio::io::stdin(), tokio::fs::File::from_std(out)))
+                                .await
+                                .map_err(|e| e.to_string())?,
+                            None => server
+                                .serve(rmcp::transport::stdio())
+                                .await
+                                .map_err(|e| e.to_string())?,
+                        };
                         service.waiting().await.map_err(|e| e.to_string())?;
                         Ok(())
                     })
@@ -301,6 +312,8 @@ fn collect_definitions(value: &Value, root: &Value, output: &mut serde_json::Map
 /// Silent, display-free host. `audible` explicitly opts into hardware audio.
 /// EOF ends the host; no stdin-reading thread is joined during shutdown.
 pub fn run_headless(project: Option<std::path::PathBuf>, audible: bool) -> Result<(), String> {
+    // プラグインを読み込む前に、通信用の標準出力を取り分けておく。
+    isolate_stdout();
     let project_data = peel_document::Project::empty("Untitled");
     let mut session = if audible {
         Session::new(project_data)

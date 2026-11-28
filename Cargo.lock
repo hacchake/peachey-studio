@@ -2971,6 +2971,7 @@ name = "peel-mcp"
 version = "0.1.0"
 dependencies = [
  "json-patch",
+ "libc",
  "peel-compose",
  "peel-devices",
  "peel-document",
@@ -2984,6 +2985,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
